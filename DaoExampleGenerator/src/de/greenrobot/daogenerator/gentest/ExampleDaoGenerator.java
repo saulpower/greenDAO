@@ -36,6 +36,7 @@ public class ExampleDaoGenerator {
         addNote(schema);
         addCustomerOrder(schema);
 
+
         new DaoGenerator().generateAll(schema, "../DaoExample/src-gen");
     }
 
@@ -45,6 +46,11 @@ public class ExampleDaoGenerator {
         note.addStringProperty("text").notNull();
         note.addStringProperty("comment");
         note.addDateProperty("date");
+    }
+
+    private static void addNoteType(Schema schema) {
+        Entity noteType = schema.addEntity("NoteType");
+        noteType.addEnumProperty("Test");
     }
 
     private static void addCustomerOrder(Schema schema) {
