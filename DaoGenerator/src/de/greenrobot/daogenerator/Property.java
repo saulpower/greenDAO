@@ -27,6 +27,10 @@ public class Property {
             property = new Property(schema, entity, propertyType, propertyName);
         }
 
+        public PropertyBuilder(Schema schema, Entity entity, EntityEnum entityEnum, String propertyName) {
+            property = new EnumProperty(schema, entity, entityEnum, propertyName);
+        }
+
         public PropertyBuilder columnName(String columnName) {
             property.columnName = columnName;
             return this;
@@ -120,6 +124,8 @@ public class Property {
     private boolean pkDesc;
     private boolean pkAutoincrement;
 
+    private boolean isAnEnum;
+
     private boolean unique;
     private boolean notNull;
 
@@ -135,6 +141,7 @@ public class Property {
         this.entity = entity;
         this.propertyName = propertyName;
         this.propertyType = propertyType;
+        this.isAnEnum = propertyType == PropertyType.Enum;
     }
 
     public String getPropertyName() {
@@ -164,6 +171,8 @@ public class Property {
     public boolean isAutoincrement() {
         return pkAutoincrement;
     }
+
+    public boolean isAnEnum() { return isAnEnum; }
 
     public String getConstraints() {
         return constraints;

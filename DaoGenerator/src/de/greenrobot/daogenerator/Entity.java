@@ -41,6 +41,7 @@ public class Entity {
     private final List<Property> propertiesPk;
     private final List<Property> propertiesNonPk;
     private final Set<String> propertyNames;
+    private final List<EntityEnum> enums;
     private final List<Index> indexes;
     private final List<ToOne> toOneRelations;
     private final List<ToMany> toManyRelations;
@@ -75,6 +76,7 @@ public class Entity {
         propertiesPk = new ArrayList<Property>();
         propertiesNonPk = new ArrayList<Property>();
         propertyNames = new HashSet<String>();
+        enums = new ArrayList<EntityEnum>();
         indexes = new ArrayList<Index>();
         toOneRelations = new ArrayList<ToOne>();
         toManyRelations = new ArrayList<ToMany>();
@@ -126,8 +128,8 @@ public class Entity {
         return addProperty(PropertyType.Date, propertyName);
     }
 
-    public PropertyBuilder addEnumProperty(String propertyName) {
-        return addProperty(PropertyType.Enum, propertyName);
+    public PropertyBuilder addEnumProperty(EntityEnum entityEnum, String propertyName) {
+        return addProperty(entityEnum, propertyName);
     }
 
     public PropertyBuilder addProperty(PropertyType propertyType, String propertyName) {
@@ -139,12 +141,29 @@ public class Entity {
         return builder;
     }
 
+    public PropertyBuilder addProperty(EntityEnum entityEnum, String propertyName) {
+        if (!propertyNames.add(propertyName)) {
+            throw new RuntimeException("Property already defined: " + propertyName);
+        }
+        PropertyBuilder builder = new Property.PropertyBuilder(schema, this, entityEnum, propertyName);
+        properties.add(builder.getProperty());
+        return builder;
+    }
+
     /** Adds a standard _id column required by standard Android classes, e.g. list adapters. */
     public PropertyBuilder addIdProperty() {
         PropertyBuilder builder = addLongProperty("id");
         builder.columnName("_id").primaryKey();
         return builder;
     }
+
+    public EntityEnum addEnum(String enumName, List<EntityEnum.Value> values) {
+        EntityEnum entityEnum = new EntityEnum(this, enumName, values);
+        enums.add(entityEnum);
+        return entityEnum;
+    }
+
+
 
     /** Adds a to-many relationship; the target entity is joined to the PK property of this entity (typically the ID). */
     public ToMany addToMany(Entity target, Property targetProperty) {
@@ -211,7 +230,7 @@ public class Entity {
 
     public ToOne addToOneWithoutProperty(String name, Entity target, String fkColumnName, boolean notNull,
                                          boolean unique) {
-        PropertyBuilder propertyBuilder = new PropertyBuilder(schema, this, null, name);
+        PropertyBuilder propertyBuilder = new PropertyBuilder(schema, this, (PropertyType) null, name);
         if (notNull) {
             propertyBuilder.notNull();
         }
@@ -374,6 +393,8 @@ public class Entity {
     public void setSkipGenerationTest(boolean skipGenerationTest) {
         this.skipGenerationTest = skipGenerationTest;
     }
+
+    public List<EntityEnum> getEnums() { return enums; }
 
     public List<ToOne> getToOneRelations() {
         return toOneRelations;

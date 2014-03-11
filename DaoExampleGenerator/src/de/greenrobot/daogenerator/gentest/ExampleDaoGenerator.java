@@ -15,11 +15,9 @@
  */
 package de.greenrobot.daogenerator.gentest;
 
-import de.greenrobot.daogenerator.DaoGenerator;
-import de.greenrobot.daogenerator.Entity;
-import de.greenrobot.daogenerator.Property;
-import de.greenrobot.daogenerator.Schema;
-import de.greenrobot.daogenerator.ToMany;
+import de.greenrobot.daogenerator.*;
+
+import java.util.ArrayList;
 
 /**
  * Generates entities and DAOs for the example project DaoExample.
@@ -36,8 +34,7 @@ public class ExampleDaoGenerator {
         addNote(schema);
         addCustomerOrder(schema);
 
-
-        new DaoGenerator().generateAll(schema, "../DaoExample/src-gen");
+        new DaoGenerator().generateAll(schema, "/Users/saulhoward/Developer/greenDAO/DaoExample/src-gen");
     }
 
     private static void addNote(Schema schema) {
@@ -48,9 +45,13 @@ public class ExampleDaoGenerator {
         note.addDateProperty("date");
     }
 
-    private static void addNoteType(Schema schema) {
-        Entity noteType = schema.addEntity("NoteType");
-        noteType.addEnumProperty("Test");
+    private static EntityEnum addOrderType(Entity entity) {
+        ArrayList<EntityEnum.Value> values = new ArrayList<EntityEnum.Value>();
+        values.add(new EntityEnum.Value("Work", 1));
+        values.add(new EntityEnum.Value("Personal", 2));
+        values.add(new EntityEnum.Value("Church", 3));
+
+        return entity.addEnum("OrderType", values);
     }
 
     private static void addCustomerOrder(Schema schema) {
@@ -58,8 +59,11 @@ public class ExampleDaoGenerator {
         customer.addIdProperty();
         customer.addStringProperty("name").notNull();
 
+        EntityEnum entityEnum = addOrderType(customer);
+
         Entity order = schema.addEntity("Order");
         order.setTableName("ORDERS"); // "ORDER" is a reserved keyword
+        order.addEnumProperty(entityEnum, "type");
         order.addIdProperty();
         Property orderDate = order.addDateProperty("date").getProperty();
         Property customerId = order.addLongProperty("customerId").notNull().getProperty();

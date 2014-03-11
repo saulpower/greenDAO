@@ -1,6 +1,10 @@
 package de.greenrobot.daoexample;
 
 import java.util.List;
+import de.greenrobot.dao.DaoEnum;
+import java.util.HashMap;
+import java.util.Map;
+
 import de.greenrobot.daoexample.DaoSession;
 import de.greenrobot.dao.DaoException;
 
@@ -56,6 +60,36 @@ public class Customer {
     /** Not-null value; ensure this value is available before it is saved to the database. */
     public void setName(String name) {
         this.name = name;
+    }
+
+    public enum OrderType implements DaoEnum {
+        WORK(1),
+        PERSONAL(2),
+        CHURCH(3);
+
+        private static final Map<Long, OrderType> intToTypeMap = new HashMap<Long, OrderType>();
+
+        static {
+            for (OrderType type : OrderType.values()) {
+                intToTypeMap.put(type.value, type);
+            }
+        }
+
+        public static OrderType fromInt(long i) {
+            OrderType type = intToTypeMap.get(Long.valueOf(i));
+            return type;
+        }
+
+        private final long value;
+
+        private OrderType(long value) {
+            this.value = value;
+        }
+
+        @Override
+        public long getValue() {
+            return value;
+        }
     }
 
     /** To-many relationship, resolved on first access (and after reset). Changes to to-many relations are not persisted, make changes to the target entity. */

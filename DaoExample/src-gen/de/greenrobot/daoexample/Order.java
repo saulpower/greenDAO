@@ -1,5 +1,6 @@
 package de.greenrobot.daoexample;
 
+import de.greenrobot.daoexample.Customer.OrderType;
 import de.greenrobot.daoexample.DaoSession;
 import de.greenrobot.dao.DaoException;
 
@@ -9,6 +10,7 @@ import de.greenrobot.dao.DaoException;
  */
 public class Order {
 
+    private OrderType type;
     private Long id;
     private java.util.Date date;
     private long customerId;
@@ -30,7 +32,8 @@ public class Order {
         this.id = id;
     }
 
-    public Order(Long id, java.util.Date date, long customerId) {
+    public Order(OrderType type, Long id, java.util.Date date, long customerId) {
+        this.type = type;
         this.id = id;
         this.date = date;
         this.customerId = customerId;
@@ -40,6 +43,14 @@ public class Order {
     public void __setDaoSession(DaoSession daoSession) {
         this.daoSession = daoSession;
         myDao = daoSession != null ? daoSession.getOrderDao() : null;
+    }
+
+    public OrderType getType() {
+        return type;
+    }
+
+    public void setType(OrderType type) {
+        this.type = type;
     }
 
     public Long getId() {

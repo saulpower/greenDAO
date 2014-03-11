@@ -2,7 +2,7 @@
 
 Copyright (C) 2011 Markus Junginger, greenrobot (http://greenrobot.de)     
                                                                            
-This file is part of greenDAO Generator.                                   
+This file is part of greenDAO Generator.
                                                                            
 greenDAO Generator is free software: you can redistribute it and/or modify 
 it under the terms of the GNU General Public License as published by       
@@ -25,6 +25,17 @@ package ${entity.javaPackage};
 <#if entity.toManyRelations?has_content>
 import java.util.List;
 </#if>
+<#if entity.enums?has_content>
+import de.greenrobot.dao.DaoEnum;
+import java.util.HashMap;
+import java.util.Map;
+
+</#if>
+<#list entity.properties as property>
+    <#if property.anEnum && entity.className != property.entityEnum.entity.className>
+import ${entity.javaPackage}.${property.entityEnum.entity.className}.${property.entityEnum.enumName};
+    </#if>
+</#list>
 <#if entity.active>
 import ${schema.defaultJavaPackageDao}.DaoSession;
 import de.greenrobot.dao.DaoException;
@@ -127,6 +138,38 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
 </#if>
     public void set${property.propertyName?cap_first}(${property.javaType} ${property.propertyName}) {
         this.${property.propertyName} = ${property.propertyName};
+    }
+
+</#list>
+<#list entity.enums as enum>
+    public enum ${enum.enumName} implements DaoEnum {
+        <#list enum.values as value>
+        ${value.name}(${value.tag})<#if value_has_next>,<#else>;</#if>
+        </#list>
+
+        private static final Map<Long, ${enum.enumName}> intToTypeMap = new HashMap<Long, ${enum.enumName}>();
+
+        static {
+            for (${enum.enumName} type : ${enum.enumName}.values()) {
+                intToTypeMap.put(type.value, type);
+            }
+        }
+
+        public static ${enum.enumName} fromInt(long i) {
+            ${enum.enumName} type = intToTypeMap.get(Long.valueOf(i));
+            return type;
+        }
+
+        private final long value;
+
+        private ${enum.enumName}(long value) {
+            this.value = value;
+        }
+
+        @Override
+        public long getValue() {
+            return value;
+        }
     }
 
 </#list>
