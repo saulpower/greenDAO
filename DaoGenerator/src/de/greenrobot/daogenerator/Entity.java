@@ -69,6 +69,8 @@ public class Entity {
     private Boolean active;
     private Boolean hasKeepSections;
 
+    protected boolean anEnum = false;
+
     Entity(Schema schema, String className) {
         this.schema = schema;
         this.className = className;
@@ -268,6 +270,7 @@ public class Entity {
         protobuf = true;
         return this;
     }
+    public boolean isAnEnum() { return anEnum; }
 
     public boolean isProtobuf() {
         return protobuf;

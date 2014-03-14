@@ -106,6 +106,24 @@ public class Schema {
     }
 
     /**
+     * Adds a new enum to the schema.
+     */
+    public EnumEntity addEnumEntity(String enumName, List<EntityEnum.Value> values) {
+        EnumEntity entity = new EnumEntity(this, enumName, values);
+        entities.add(entity);
+        return entity;
+    }
+
+    /**
+     * Adds a new enum to the schema.
+     */
+    public EnumEntity addEnumEntity(String enumName) {
+        EnumEntity entity = new EnumEntity(this, enumName);
+        entities.add(entity);
+        return entity;
+    }
+
+    /**
      * Adds a new protocol buffers entity to the schema. There can be multiple entities per table, but only one may be
      * the primary entity per table to create table scripts, etc.
      */

@@ -9,6 +9,7 @@ import de.greenrobot.dao.AbstractDaoMaster;
 import de.greenrobot.dao.identityscope.IdentityScopeType;
 
 import de.greenrobot.daoexample.NoteDao;
+import de.greenrobot.daoexample.NoteTypeDao;
 import de.greenrobot.daoexample.CustomerDao;
 import de.greenrobot.daoexample.OrderDao;
 
@@ -22,6 +23,7 @@ public class DaoMaster extends AbstractDaoMaster {
     /** Creates underlying database table using DAOs. */
     public static void createAllTables(SQLiteDatabase db, boolean ifNotExists) {
         NoteDao.createTable(db, ifNotExists);
+        NoteTypeDao.createTable(db, ifNotExists);
         CustomerDao.createTable(db, ifNotExists);
         OrderDao.createTable(db, ifNotExists);
     }
@@ -29,6 +31,7 @@ public class DaoMaster extends AbstractDaoMaster {
     /** Drops underlying database table using DAOs. */
     public static void dropAllTables(SQLiteDatabase db, boolean ifExists) {
         NoteDao.dropTable(db, ifExists);
+        NoteTypeDao.dropTable(db, ifExists);
         CustomerDao.dropTable(db, ifExists);
         OrderDao.dropTable(db, ifExists);
     }
@@ -63,6 +66,7 @@ public class DaoMaster extends AbstractDaoMaster {
     public DaoMaster(SQLiteDatabase db) {
         super(db, SCHEMA_VERSION);
         registerDaoClass(NoteDao.class);
+        registerDaoClass(NoteTypeDao.class);
         registerDaoClass(CustomerDao.class);
         registerDaoClass(OrderDao.class);
     }

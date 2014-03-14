@@ -10,10 +10,10 @@ import de.greenrobot.dao.DaoException;
  */
 public class Order {
 
-    private OrderType type;
     private Long id;
-    private java.util.Date date;
     private long customerId;
+    private java.util.Date date;
+    private OrderType type;
 
     /** Used to resolve relations */
     private transient DaoSession daoSession;
@@ -32,25 +32,17 @@ public class Order {
         this.id = id;
     }
 
-    public Order(OrderType type, Long id, java.util.Date date, long customerId) {
-        this.type = type;
+    public Order(Long id, long customerId, java.util.Date date, OrderType type) {
         this.id = id;
-        this.date = date;
         this.customerId = customerId;
+        this.date = date;
+        this.type = type;
     }
 
     /** called by internal mechanisms, do not call yourself. */
     public void __setDaoSession(DaoSession daoSession) {
         this.daoSession = daoSession;
         myDao = daoSession != null ? daoSession.getOrderDao() : null;
-    }
-
-    public OrderType getType() {
-        return type;
-    }
-
-    public void setType(OrderType type) {
-        this.type = type;
     }
 
     public Long getId() {
@@ -61,6 +53,14 @@ public class Order {
         this.id = id;
     }
 
+    public long getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(long customerId) {
+        this.customerId = customerId;
+    }
+
     public java.util.Date getDate() {
         return date;
     }
@@ -69,12 +69,12 @@ public class Order {
         this.date = date;
     }
 
-    public long getCustomerId() {
-        return customerId;
+    public OrderType getType() {
+        return type;
     }
 
-    public void setCustomerId(long customerId) {
-        this.customerId = customerId;
+    public void setType(OrderType type) {
+        this.type = type;
     }
 
     /** To-one relationship, resolved on first access. */

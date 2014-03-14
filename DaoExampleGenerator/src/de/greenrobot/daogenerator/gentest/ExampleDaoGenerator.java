@@ -43,6 +43,18 @@ public class ExampleDaoGenerator {
         note.addStringProperty("text").notNull();
         note.addStringProperty("comment");
         note.addDateProperty("date");
+
+        addNoteType(schema, note);
+    }
+
+    private static void addNoteType(Schema schema, Entity entity) {
+        ArrayList<EntityEnum.Value> values = new ArrayList<EntityEnum.Value>();
+        values.add(new EntityEnum.Value("Ultimate", 1));
+        values.add(new EntityEnum.Value("Frisbee", 2));
+        values.add(new EntityEnum.Value("Rocks", 3));
+        EnumEntity enumEntity = schema.addEnumEntity("NoteType", values);
+
+        entity.addEnumProperty(enumEntity.getEntityEnum(), "type");
     }
 
     private static EntityEnum addOrderType(Entity entity) {

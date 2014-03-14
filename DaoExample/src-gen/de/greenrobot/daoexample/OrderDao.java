@@ -29,10 +29,10 @@ public class OrderDao extends AbstractDao<Order, Long> {
      * Can be used for QueryBuilder and for referencing column names.
     */
     public static class Properties {
-        public final static Property Type = new Property(0, OrderType.class, "type", false, "TYPE");
-        public final static Property Id = new Property(1, Long.class, "id", true, "_id");
+        public final static Property Id = new Property(0, Long.class, "id", true, "_id");
+        public final static Property CustomerId = new Property(1, long.class, "customerId", false, "CUSTOMER_ID");
         public final static Property Date = new Property(2, java.util.Date.class, "date", false, "DATE");
-        public final static Property CustomerId = new Property(3, long.class, "customerId", false, "CUSTOMER_ID");
+        public final static Property Type = new Property(3, OrderType.class, "type", false, "TYPE");
     };
 
     private DaoSession daoSession;
@@ -52,10 +52,10 @@ public class OrderDao extends AbstractDao<Order, Long> {
     public static void createTable(SQLiteDatabase db, boolean ifNotExists) {
         String constraint = ifNotExists? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "'ORDERS' (" + //
-                "'TYPE' INTEGER," + // 0: type
-                "'_id' INTEGER PRIMARY KEY ," + // 1: id
+                "'_id' INTEGER PRIMARY KEY ," + // 0: id
+                "'CUSTOMER_ID' INTEGER NOT NULL ," + // 1: customerId
                 "'DATE' INTEGER," + // 2: date
-                "'CUSTOMER_ID' INTEGER NOT NULL );"); // 3: customerId
+                "'TYPE' INTEGER);"); // 3: type
     }
 
     /** Drops the underlying database table. */
@@ -69,21 +69,21 @@ public class OrderDao extends AbstractDao<Order, Long> {
     protected void bindValues(SQLiteStatement stmt, Order entity) {
         stmt.clearBindings();
  
-        OrderType type = entity.getType();
-        if (type != null) {
-            stmt.bindLong(1, type.getValue());
-        }
- 
         Long id = entity.getId();
         if (id != null) {
-            stmt.bindLong(2, id);
+            stmt.bindLong(1, id);
         }
+        stmt.bindLong(2, entity.getCustomerId());
  
         java.util.Date date = entity.getDate();
         if (date != null) {
             stmt.bindLong(3, date.getTime());
         }
-        stmt.bindLong(4, entity.getCustomerId());
+ 
+        OrderType type = entity.getType();
+        if (type != null) {
+            stmt.bindLong(4, type.getValue());
+        }
     }
 
     @Override
@@ -95,17 +95,17 @@ public class OrderDao extends AbstractDao<Order, Long> {
     /** @inheritdoc */
     @Override
     public Long readKey(Cursor cursor, int offset) {
-        return cursor.isNull(offset + 1) ? null : cursor.getLong(offset + 1);
+        return cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0);
     }    
 
     /** @inheritdoc */
     @Override
     public Order readEntity(Cursor cursor, int offset) {
         Order entity = new Order( //
-            cursor.isNull(offset + 0) ? null : OrderType.fromInt(cursor.getLong(offset + 0)), // type
-            cursor.isNull(offset + 1) ? null : cursor.getLong(offset + 1), // id
+            cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0), // id
+            cursor.getLong(offset + 1), // customerId
             cursor.isNull(offset + 2) ? null : new java.util.Date(cursor.getLong(offset + 2)), // date
-            cursor.getLong(offset + 3) // customerId
+            cursor.isNull(offset + 3) ? null : OrderType.fromInt(cursor.getLong(offset + 3)) // type
         );
         return entity;
     }
@@ -113,10 +113,10 @@ public class OrderDao extends AbstractDao<Order, Long> {
     /** @inheritdoc */
     @Override
     public void readEntity(Cursor cursor, Order entity, int offset) {
-        entity.setType(cursor.isNull(offset + 0) ? null : OrderType.fromInt(cursor.getLong(offset + 0)));
-        entity.setId(cursor.isNull(offset + 1) ? null : cursor.getLong(offset + 1));
+        entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
+        entity.setCustomerId(cursor.getLong(offset + 1));
         entity.setDate(cursor.isNull(offset + 2) ? null : new java.util.Date(cursor.getLong(offset + 2)));
-        entity.setCustomerId(cursor.getLong(offset + 3));
+        entity.setType(cursor.isNull(offset + 3) ? null : OrderType.fromInt(cursor.getLong(offset + 3)));
      }
     
     /** @inheritdoc */

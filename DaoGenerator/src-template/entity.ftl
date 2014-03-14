@@ -33,7 +33,7 @@ import java.util.Map;
 </#if>
 <#list entity.properties as property>
     <#if property.anEnum && entity.className != property.entityEnum.entity.className>
-import ${entity.javaPackage}.${property.entityEnum.entity.className}.${property.entityEnum.enumName};
+import ${entity.javaPackage}.${property.entityEnum.entity.className}<#if !property.entityEnum.entity.anEnum>.${property.entityEnum.enumName}</#if>;
     </#if>
 </#list>
 <#if entity.active>

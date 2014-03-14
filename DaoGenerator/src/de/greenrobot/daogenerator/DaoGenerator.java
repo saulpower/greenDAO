@@ -46,6 +46,7 @@ public class DaoGenerator {
     private Template templateDaoMaster;
     private Template templateDaoSession;
     private Template templateEntity;
+    private Template templateEnumEntity;
     private Template templateDaoUnitTest;
     private Template templateContentProvider;
 
@@ -66,6 +67,7 @@ public class DaoGenerator {
         templateDaoMaster = config.getTemplate("dao-master.ftl");
         templateDaoSession = config.getTemplate("dao-session.ftl");
         templateEntity = config.getTemplate("entity.ftl");
+        templateEnumEntity = config.getTemplate("enumentity.ftl");
         templateDaoUnitTest = config.getTemplate("dao-unit-test.ftl");
         templateContentProvider = config.getTemplate("content-provider.ftl");
     }
@@ -99,8 +101,12 @@ public class DaoGenerator {
 
         List<Entity> entities = schema.getEntities();
         for (Entity entity : entities) {
-            generate(templateDao, outDirFile, entity.getJavaPackageDao(), entity.getClassNameDao(), schema, entity);
-            if (!entity.isProtobuf() && !entity.isSkipGeneration()) {
+            if (!(entity instanceof EnumEntity)) {
+                generate(templateDao, outDirFile, entity.getJavaPackageDao(), entity.getClassNameDao(), schema, entity);
+            }
+            if (entity instanceof EnumEntity) {
+                generate(templateEnumEntity, outDirFile, entity.getJavaPackage(), entity.getClassName(), schema, entity);
+            } else if (!entity.isProtobuf() && !entity.isSkipGeneration()) {
                 generate(templateEntity, outDirFile, entity.getJavaPackage(), entity.getClassName(), schema, entity);
             }
             if (outDirTestFile != null && !entity.isSkipGenerationTest()) {

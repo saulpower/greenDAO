@@ -10,10 +10,12 @@ import de.greenrobot.dao.identityscope.IdentityScopeType;
 import de.greenrobot.dao.internal.DaoConfig;
 
 import de.greenrobot.daoexample.Note;
+import de.greenrobot.daoexample.NoteType;
 import de.greenrobot.daoexample.Customer;
 import de.greenrobot.daoexample.Order;
 
 import de.greenrobot.daoexample.NoteDao;
+import de.greenrobot.daoexample.NoteTypeDao;
 import de.greenrobot.daoexample.CustomerDao;
 import de.greenrobot.daoexample.OrderDao;
 
@@ -27,10 +29,12 @@ import de.greenrobot.daoexample.OrderDao;
 public class DaoSession extends AbstractDaoSession {
 
     private final DaoConfig noteDaoConfig;
+    private final DaoConfig noteTypeDaoConfig;
     private final DaoConfig customerDaoConfig;
     private final DaoConfig orderDaoConfig;
 
     private final NoteDao noteDao;
+    private final NoteTypeDao noteTypeDao;
     private final CustomerDao customerDao;
     private final OrderDao orderDao;
 
@@ -41,6 +45,9 @@ public class DaoSession extends AbstractDaoSession {
         noteDaoConfig = daoConfigMap.get(NoteDao.class).clone();
         noteDaoConfig.initIdentityScope(type);
 
+        noteTypeDaoConfig = daoConfigMap.get(NoteTypeDao.class).clone();
+        noteTypeDaoConfig.initIdentityScope(type);
+
         customerDaoConfig = daoConfigMap.get(CustomerDao.class).clone();
         customerDaoConfig.initIdentityScope(type);
 
@@ -48,22 +55,29 @@ public class DaoSession extends AbstractDaoSession {
         orderDaoConfig.initIdentityScope(type);
 
         noteDao = new NoteDao(noteDaoConfig, this);
+        noteTypeDao = new NoteTypeDao(noteTypeDaoConfig, this);
         customerDao = new CustomerDao(customerDaoConfig, this);
         orderDao = new OrderDao(orderDaoConfig, this);
 
         registerDao(Note.class, noteDao);
+        registerDao(NoteType.class, noteTypeDao);
         registerDao(Customer.class, customerDao);
         registerDao(Order.class, orderDao);
     }
     
     public void clear() {
         noteDaoConfig.getIdentityScope().clear();
+        noteTypeDaoConfig.getIdentityScope().clear();
         customerDaoConfig.getIdentityScope().clear();
         orderDaoConfig.getIdentityScope().clear();
     }
 
     public NoteDao getNoteDao() {
         return noteDao;
+    }
+
+    public NoteTypeDao getNoteTypeDao() {
+        return noteTypeDao;
     }
 
     public CustomerDao getCustomerDao() {

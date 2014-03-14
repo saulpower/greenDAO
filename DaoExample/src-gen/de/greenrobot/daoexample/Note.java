@@ -9,8 +9,9 @@ public class Note {
     private Long id;
     /** Not-null value. */
     private String text;
-    private String comment;
+    private NoteType type;
     private java.util.Date date;
+    private String comment;
 
     public Note() {
     }
@@ -19,11 +20,12 @@ public class Note {
         this.id = id;
     }
 
-    public Note(Long id, String text, String comment, java.util.Date date) {
+    public Note(Long id, String text, NoteType type, java.util.Date date, String comment) {
         this.id = id;
         this.text = text;
-        this.comment = comment;
+        this.type = type;
         this.date = date;
+        this.comment = comment;
     }
 
     public Long getId() {
@@ -44,12 +46,12 @@ public class Note {
         this.text = text;
     }
 
-    public String getComment() {
-        return comment;
+    public NoteType getType() {
+        return type;
     }
 
-    public void setComment(String comment) {
-        this.comment = comment;
+    public void setType(NoteType type) {
+        this.type = type;
     }
 
     public java.util.Date getDate() {
@@ -58,6 +60,14 @@ public class Note {
 
     public void setDate(java.util.Date date) {
         this.date = date;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 
 }
