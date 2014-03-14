@@ -54,7 +54,7 @@ import ${additionalImport};
 </#if>
 import ${entity.javaPackage}.${entity.className};
 <#list entity.properties as property>
-    <#if property.anEnum && entity.className != property.entityEnum.entity.className>
+    <#if property.anEnum>
 import ${entity.javaPackage}.${property.entityEnum.entity.className}.${property.entityEnum.enumName};
     </#if>
 </#list>

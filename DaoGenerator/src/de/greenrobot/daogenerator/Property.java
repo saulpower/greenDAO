@@ -31,6 +31,10 @@ public class Property {
             property = new EnumProperty(schema, entity, entityEnum, propertyName);
         }
 
+        public PropertyBuilder(Property property) {
+            this.property = property;
+        }
+
         public PropertyBuilder columnName(String columnName) {
             property.columnName = columnName;
             return this;

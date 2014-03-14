@@ -36,7 +36,7 @@ import java.util.*;
 public class Entity {
     private final Schema schema;
     private final String className;
-    private final List<Property> properties;
+    private final Map<String, Property> propertiesMap;
     private List<Property> propertiesColumns;
     private final List<Property> propertiesPk;
     private final List<Property> propertiesNonPk;
@@ -72,7 +72,7 @@ public class Entity {
     Entity(Schema schema, String className) {
         this.schema = schema;
         this.className = className;
-        properties = new ArrayList<Property>();
+        propertiesMap = new HashMap<String, Property>();
         propertiesPk = new ArrayList<Property>();
         propertiesNonPk = new ArrayList<Property>();
         propertyNames = new HashSet<String>();
@@ -133,20 +133,20 @@ public class Entity {
     }
 
     public PropertyBuilder addProperty(PropertyType propertyType, String propertyName) {
-        if (!propertyNames.add(propertyName)) {
-            throw new RuntimeException("Property already defined: " + propertyName);
-        }
+
+        if (propertiesMap.containsKey(propertyName)) return new Property.PropertyBuilder(propertiesMap.get(propertyName));
+
         PropertyBuilder builder = new Property.PropertyBuilder(schema, this, propertyType, propertyName);
-        properties.add(builder.getProperty());
+        propertiesMap.put(propertyName, builder.getProperty());
         return builder;
     }
 
     public PropertyBuilder addProperty(EntityEnum entityEnum, String propertyName) {
-        if (!propertyNames.add(propertyName)) {
-            throw new RuntimeException("Property already defined: " + propertyName);
-        }
+
+        if (propertiesMap.containsKey(propertyName)) return new Property.PropertyBuilder(propertiesMap.get(propertyName));
+
         PropertyBuilder builder = new Property.PropertyBuilder(schema, this, entityEnum, propertyName);
-        properties.add(builder.getProperty());
+        propertiesMap.put(propertyName, builder.getProperty());
         return builder;
     }
 
@@ -289,9 +289,7 @@ public class Entity {
         return className;
     }
 
-    public List<Property> getProperties() {
-        return properties;
-    }
+    public List<Property> getProperties() { return new ArrayList<Property>(propertiesMap.values()); }
 
     public List<Property> getPropertiesColumns() {
         return propertiesColumns;
@@ -465,15 +463,17 @@ public class Entity {
     void init2ndPass() {
         init2nPassNamesWithDefaults();
 
-        for (int i = 0; i < properties.size(); i++) {
-            Property property = properties.get(i);
-            property.setOrdinal(i);
+        int count = 0;
+        for (Property property : propertiesMap.values()) {
+            property.setOrdinal(count);
             property.init2ndPass();
             if (property.isPrimaryKey()) {
                 propertiesPk.add(property);
             } else {
                 propertiesNonPk.add(property);
             }
+
+            count++;
         }
 
         if (propertiesPk.size() == 1) {
@@ -483,7 +483,7 @@ public class Entity {
             pkType = "Void";
         }
 
-        propertiesColumns = new ArrayList<Property>(properties);
+        propertiesColumns = new ArrayList<Property>(propertiesMap.values());
         for (ToOne toOne : toOneRelations) {
             toOne.init2ndPass();
             Property[] fkProperties = toOne.getFkProperties();
@@ -570,7 +570,7 @@ public class Entity {
     }
 
     void init3ndPass() {
-        for (Property property : properties) {
+        for (Property property : propertiesMap.values()) {
             property.init3ndPass();
         }
 
@@ -583,7 +583,7 @@ public class Entity {
         for (ToOne toOne : toOneRelations) {
             toOne.init3ndPass();
             if (!toOneNames.add(toOne.getName().toLowerCase())) {
-                throw new RuntimeException("Duplicate name for " + toOne);
+                throw new RuntimeException("Duplicate name for " + toOne + " on " + getClassName());
             }
         }
 
@@ -632,7 +632,7 @@ public class Entity {
     }
 
     public void validatePropertyExists(Property property) {
-        if (!properties.contains(property)) {
+        if (!propertiesMap.containsValue(property)) {
             throw new RuntimeException("Property " + property + " does not exist in " + this);
         }
     }
