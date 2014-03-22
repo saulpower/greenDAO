@@ -60,7 +60,8 @@ public class Entity {
     private Property pkProperty;
     private String pkType;
     private String superclass;
-
+    private Entity baseEntity;
+    private boolean aBaseEntity = false;
     private boolean protobuf;
     private boolean constructors;
     private boolean skipGeneration;
@@ -68,6 +69,8 @@ public class Entity {
     private boolean skipTableCreation;
     private Boolean active;
     private Boolean hasKeepSections;
+
+    private Property referenceProperty;
 
     protected boolean anEnum = false;
 
@@ -131,24 +134,26 @@ public class Entity {
     }
 
     public PropertyBuilder addEnumProperty(EntityEnum entityEnum, String propertyName) {
-        return addProperty(entityEnum, propertyName);
+        return addProperty(null, entityEnum, propertyName);
     }
 
     public PropertyBuilder addProperty(PropertyType propertyType, String propertyName) {
-
-        if (propertiesMap.containsKey(propertyName)) return new Property.PropertyBuilder(propertiesMap.get(propertyName));
-
-        PropertyBuilder builder = new Property.PropertyBuilder(schema, this, propertyType, propertyName);
-        propertiesMap.put(propertyName, builder.getProperty());
-        return builder;
+        return addProperty(propertyType, null, propertyName);
     }
 
-    public PropertyBuilder addProperty(EntityEnum entityEnum, String propertyName) {
+    private PropertyBuilder addProperty(PropertyType propertyType, EntityEnum entityEnum, String propertyName) {
 
-        if (propertiesMap.containsKey(propertyName)) return new Property.PropertyBuilder(propertiesMap.get(propertyName));
+        if (propertiesMap.containsKey(propertyName.toUpperCase())) return new Property.PropertyBuilder(propertiesMap.get(propertyName.toUpperCase()));
 
-        PropertyBuilder builder = new Property.PropertyBuilder(schema, this, entityEnum, propertyName);
-        propertiesMap.put(propertyName, builder.getProperty());
+        PropertyBuilder builder;
+
+        if (entityEnum != null) {
+            builder = new Property.PropertyBuilder(schema, this, entityEnum, propertyName);
+        } else {
+            builder = new Property.PropertyBuilder(schema, this, propertyType, propertyName);
+        }
+
+        propertiesMap.put(propertyName.toUpperCase(), builder.getProperty());
         return builder;
     }
 
@@ -164,8 +169,6 @@ public class Entity {
         enums.add(entityEnum);
         return entityEnum;
     }
-
-
 
     /** Adds a to-many relationship; the target entity is joined to the PK property of this entity (typically the ID). */
     public ToMany addToMany(Entity target, Property targetProperty) {
@@ -281,6 +284,9 @@ public class Entity {
     }
 
     public String getTableName() {
+        if (tableName == null) {
+            tableName = DaoUtil.dbName(className);
+        }
         return tableName;
     }
 
@@ -425,6 +431,10 @@ public class Entity {
         return hasKeepSections;
     }
 
+    public Boolean getHasReferenceProperty() { return referenceProperty != null; }
+
+    public Property getReferenceProperty() { return referenceProperty; }
+
     public Collection<String> getAdditionalImportsEntity() {
         return additionalImportsEntity;
     }
@@ -461,6 +471,31 @@ public class Entity {
 
     public void setSuperclass(String classToExtend) {
         this.superclass = classToExtend;
+    }
+
+    public Entity getBaseEntity() {
+        return baseEntity;
+    }
+
+    public void setBaseEntity(Entity baseEntity) {
+        if (!baseEntity.isaBaseEntity()) {
+            baseEntity.setaBaseEntity();
+        }
+        this.baseEntity = baseEntity;
+        this.superclass = baseEntity.getClassName();
+        referenceProperty = addLongProperty(DaoUtil.firstToLowerCase(superclass) + "Id").reference(baseEntity).markTransient().getProperty();
+    }
+
+    public boolean isaBaseEntity() {
+        return aBaseEntity;
+    }
+
+    public void setaBaseEntity() {
+        // initialize derived type property
+        if (!aBaseEntity) {
+            aBaseEntity = true;
+            addStringProperty("derivedEntityType").notNull().markTransient();
+        }
     }
 
     void init2ndPass() {
@@ -510,7 +545,7 @@ public class Entity {
         if (active == null) {
             active = schema.isUseActiveEntitiesByDefault();
         }
-        active |= !toOneRelations.isEmpty() || !toManyRelations.isEmpty();
+        active |= !toOneRelations.isEmpty() || !toManyRelations.isEmpty() || baseEntity != null || aBaseEntity;
 
         if (hasKeepSections == null) {
             hasKeepSections = schema.isHasKeepSectionsByDefault();

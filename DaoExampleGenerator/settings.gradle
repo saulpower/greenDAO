@@ -1,1 +1,2 @@
+include 'DaoGenerator'
 rootProject.name = 'greendao-example-generator'

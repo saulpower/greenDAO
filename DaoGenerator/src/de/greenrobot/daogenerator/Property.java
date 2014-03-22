@@ -81,6 +81,26 @@ public class Property {
             return this;
         }
 
+        public PropertyBuilder reference(Entity entity) {
+            property.referenceTable = entity.getTableName();
+            if (entity.getPkProperty() != null) {
+                property.referenceColumn = entity.getPkProperty().getColumnName();
+            } else {
+                for (Property prop : entity.getProperties()) {
+                    if (prop.isPrimaryKey()) {
+                        property.referenceColumn = prop.getColumnName();
+                        break;
+                    }
+                }
+            }
+            return this;
+        }
+
+        public PropertyBuilder markTransient() {
+            property.transientProperty = true;
+            return this;
+        }
+
         public PropertyBuilder index() {
             Index index = new Index();
             index.addProperty(property);
@@ -122,6 +142,8 @@ public class Property {
 
     private String columnName;
     private String columnType;
+    private String referenceTable;
+    private String referenceColumn;
 
     private boolean primaryKey;
     private boolean pkAsc;
@@ -132,6 +154,8 @@ public class Property {
 
     private boolean unique;
     private boolean notNull;
+
+    private boolean transientProperty = false;
 
     /** Initialized in 2nd pass */
     private String constraints;
@@ -161,6 +185,9 @@ public class Property {
     }
 
     public String getColumnName() {
+        if (columnName == null) {
+            columnName = DaoUtil.dbName(propertyName);
+        }
         return columnName;
     }
 
@@ -189,6 +216,10 @@ public class Property {
     public boolean isNotNull() {
         return notNull;
     }
+
+    public boolean isReference() { return referenceTable != null && referenceColumn != null; }
+
+    public boolean isTransientProperty() { return transientProperty; }
 
     public String getJavaType() {
         return javaType;
@@ -243,6 +274,14 @@ public class Property {
         if (unique) {
             constraintBuilder.append(" UNIQUE");
         }
+        if (referenceTable != null && referenceColumn != null) {
+            constraintBuilder.append(" REFERENCES '");
+            constraintBuilder.append(referenceTable);
+            constraintBuilder.append("'('");
+            constraintBuilder.append(referenceColumn);
+            constraintBuilder.append("')");
+        }
+
         String newContraints = constraintBuilder.toString().trim();
         if (constraintBuilder.length() > 0) {
             constraints = newContraints;

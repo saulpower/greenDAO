@@ -82,6 +82,10 @@ public class DaoUtil {
         return byteCount;
     }
     
-
+    public static String firstToLowerCase(String s) {
+        char[] charArray = s.toCharArray();
+        charArray[0] = Character.toLowerCase(charArray[0]);
+        return new String(charArray);
+    }
 
 }

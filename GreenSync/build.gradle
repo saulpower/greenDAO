@@ -1,0 +1,36 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'de.greenrobot'
+sourceCompatibility = 1.6
+version = '1.3.0'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    provided
+}
+
+dependencies {
+    compile project(':DaoCore')
+    compile('com.google.code.gson:gson:2.2.4')
+}
+
+artifacts {
+    archives jar
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+    test {
+        java {
+            srcDir 'src-test'
+        }
+    }
+}

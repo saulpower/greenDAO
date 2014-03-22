@@ -98,9 +98,7 @@ public class ToMany {
 
     void init2ndPass() {
         if (name == null) {
-            char[] nameCharArray = targetEntity.getClassName().toCharArray();
-            nameCharArray[0] = Character.toLowerCase(nameCharArray[0]);
-            name = new String(nameCharArray) + "List";
+            name = DaoUtil.firstToLowerCase(targetEntity.getClassName()) + "List";
         }
         if (sourceProperties == null) {
             List<Property> pks = sourceEntity.getPropertiesPk();

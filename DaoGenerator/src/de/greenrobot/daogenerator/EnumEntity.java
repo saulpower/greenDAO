@@ -51,11 +51,6 @@ public class EnumEntity extends Entity {
     }
 
     @Override
-    public Property.PropertyBuilder addProperty(EntityEnum entityEnum, String propertyName) {
-        throw new UnsupportedOperationException("Adding properties is not supported for enums!");
-    }
-
-    @Override
     public Property.PropertyBuilder addIdProperty() {
         throw new UnsupportedOperationException("Adding properties is not supported for enums!");
     }

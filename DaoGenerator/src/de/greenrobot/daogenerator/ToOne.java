@@ -76,9 +76,7 @@ public class ToOne {
 
     void init2ndPass() {
         if (name == null) {
-            char[] nameCharArray = targetEntity.getClassName().toCharArray();
-            nameCharArray[0] = Character.toLowerCase(nameCharArray[0]);
-            name = new String(nameCharArray);
+            name = DaoUtil.firstToLowerCase(targetEntity.getClassName());
         }
 
     }

@@ -308,4 +308,32 @@ as property>${property.columnName}<#if property_has_next>,</#if></#list>);");
 <#if entity.toOneRelations?has_content>
     <#include "dao-deep.ftl">
 </#if>
+
+<#if entity.baseEntity?? && entity.referenceProperty??>
+    @Override
+    protected void onInsertEntity(${entity.className} entity) {
+        entity.insertBase(daoSession.get${entity.baseEntity.classNameDao?cap_first}());
+        entity.set${entity.referenceProperty.propertyName?cap_first}(entity.get${entity.baseEntity.pkProperty.propertyName?cap_first}());
+    }
+
+    @Override
+    protected void onLoadEntity(${entity.className} entity) {
+        entity.loadBase(daoSession.get${entity.baseEntity.classNameDao?cap_first}(), entity.get${entity.referenceProperty.propertyName?cap_first}());
+    }
+
+    @Override
+    protected void onRefreshEntity(${entity.className} entity) {
+        entity.loadBase(daoSession.get${entity.baseEntity.classNameDao?cap_first}(), entity.get${entity.referenceProperty.propertyName?cap_first}());
+    }
+
+    @Override
+    protected void onUpdateEntity(${entity.className} entity) {
+        entity.updateBase();
+    }
+
+    @Override
+    protected void onDeleteEntity(${entity.className} entity) {
+        entity.deleteBase();
+    }
+</#if>
 }

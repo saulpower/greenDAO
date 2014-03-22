@@ -1,2 +1,2 @@
-include 'DaoCore', 'DaoGenerator', 'DaoExampleGenerator', 'DaoExample'
+include 'DaoCore', 'DaoGenerator', 'DaoExampleGenerator', 'DaoExample', 'GreenSync'
 // include 'DaoTest' // Travis needs some Android setup for this

@@ -67,7 +67,7 @@ as ifc>${ifc}<#if ifc_has_next>, </#if></#list></#if> {
 <#if property.notNull && complexTypes?seq_contains(property.propertyType)>
     /** Not-null value. */
 </#if>
-    private ${property.javaType} ${property.propertyName};
+    private <#if property.transientProperty>transient </#if>${property.javaType} ${property.propertyName};
 </#list>
 
 <#if entity.active>
@@ -102,41 +102,88 @@ ${keepFields!}    // KEEP FIELDS END
 <#if entity.propertiesPk?has_content && entity.propertiesPk?size != entity.properties?size>
 
     public ${entity.className}(<#list entity.propertiesPk as
-property>${property.javaType} ${property.propertyName}<#if property_has_next>, </#if></#list>) {
+property><#if property_index != 0>, </#if>${property.javaType} ${property.propertyName}</#list>) {
 <#list entity.propertiesPk as property>
+        this.${property.propertyName} = ${property.propertyName};
+</#list>
+    <#if entity.baseEntity??>
+        setDerivedEntityType(getClass().getSimpleName());
+    </#if>
+    }
+</#if>
+<#if entity.hasReferenceProperty>
+
+    ${entity.className}(<#list entity.properties as
+property>${property.javaType} ${property.propertyName}<#if property_has_next>, </#if></#list>) {
+<#list entity.properties as property>
         this.${property.propertyName} = ${property.propertyName};
 </#list>
     }
 </#if>
 
     public ${entity.className}(<#list entity.properties as
-property>${property.javaType} ${property.propertyName}<#if property_has_next>, </#if></#list>) {
-<#list entity.properties as property>
+        property><#if !property.reference><#if property_index != 0>, </#if>${property.javaType} ${property.propertyName}</#if></#list>) {
+    <#list entity.properties as property>
+        <#if !property.reference>
         this.${property.propertyName} = ${property.propertyName};
-</#list>
+        </#if>
+    </#list>
+    <#if entity.baseEntity??>
+        setDerivedEntityType(getClass().getSimpleName());
+    </#if>
     }
 </#if>
 
 <#if entity.active>
     /** called by internal mechanisms, do not call yourself. */
+<#if entity.baseEntity??>
+    @Override
+</#if>
     public void __setDaoSession(DaoSession daoSession) {
+        <#if entity.baseEntity??>
+        super.__setDaoSession(daoSession);
+        </#if>
         this.daoSession = daoSession;
         myDao = daoSession != null ? daoSession.get${entity.classNameDao?cap_first}() : null;
     }
 
 </#if>
+<#if entity.aBaseEntity>
+    void loadBase(${entity.classNameDao} dao, <#list entity.propertiesPk as
+        property><#if property_index != 0>, </#if>${property.javaType} ${property.propertyName}</#list>) {
+        myDao = dao;
+    <#list entity.propertiesPk as property>
+        this.${property.propertyName} = ${property.propertyName};
+    </#list>
+        myDao.refresh(this);
+    }
+
+    void insertBase(${entity.classNameDao} dao) {
+        myDao = dao;
+        dao.insert(this);
+    }
+
+    void updateBase() {
+        myDao.update(this);
+    }
+
+    void deleteBase() {
+        myDao.delete(this);
+    }
+</#if>
 <#list entity.properties as property>
+
 <#if property.notNull && complexTypes?seq_contains(property.propertyType)>
     /** Not-null value. */
 </#if>
-    public ${property.javaType} get${property.propertyName?cap_first}() {
+    <#if !property.reference>public </#if>${property.javaType} get${property.propertyName?cap_first}() {
         return ${property.propertyName};
     }
-
 <#if property.notNull && complexTypes?seq_contains(property.propertyType)>
     /** Not-null value; ensure this value is available before it is saved to the database. */
 </#if>
-    public void set${property.propertyName?cap_first}(${property.javaType} ${property.propertyName}) {
+
+    <#if !property.reference>public </#if>void set${property.propertyName?cap_first}(${property.javaType} ${property.propertyName}) {
         this.${property.propertyName} = ${property.propertyName};
     }
 

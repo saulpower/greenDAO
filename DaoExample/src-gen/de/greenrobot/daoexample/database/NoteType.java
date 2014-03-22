@@ -1,4 +1,4 @@
-package de.greenrobot.daoexample;
+package de.greenrobot.daoexample.database;
 
 import de.greenrobot.dao.DaoEnum;
 import java.util.HashMap;

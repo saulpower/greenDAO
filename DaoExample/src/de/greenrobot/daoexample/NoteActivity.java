@@ -15,9 +15,6 @@
  */
 package de.greenrobot.daoexample;
 
-import java.text.DateFormat;
-import java.util.Date;
-
 import android.app.ListActivity;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -33,7 +30,11 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-import de.greenrobot.daoexample.DaoMaster.DevOpenHelper;
+import de.greenrobot.daoexample.database.*;
+import de.greenrobot.daoexample.database.DaoMaster.DevOpenHelper;
+
+import java.text.DateFormat;
+import java.util.Date;
 
 public class NoteActivity extends ListActivity {
 
@@ -116,7 +117,7 @@ public class NoteActivity extends ListActivity {
 
         final DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
         String comment = "Added on " + df.format(new Date());
-        Note note = new Note(null, noteText, comment, new Date(), Note.NoteType.CHURCH);
+        Note note = new Note(comment, new Date(), noteText, null, NoteType.FRISBEE);
         noteDao.insert(note);
         Log.d("DaoExample", "Inserted new note, ID: " + note.getId());
 

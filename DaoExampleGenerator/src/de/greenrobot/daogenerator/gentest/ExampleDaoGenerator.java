@@ -28,8 +28,12 @@ import java.util.ArrayList;
  */
 public class ExampleDaoGenerator {
 
+    private static Entity base;
+
     public static void main(String[] args) throws Exception {
-        Schema schema = new Schema(3, "de.greenrobot.daoexample");
+        Schema schema = new Schema(3, "de.greenrobot.daoexample.database");
+
+        createBaseEntity(schema);
 
         addNote(schema);
         addCustomerOrder(schema);
@@ -37,12 +41,19 @@ public class ExampleDaoGenerator {
         new DaoGenerator().generateAll(schema, "/Users/saulhoward/Developer/greenDAO/DaoExample/src-gen");
     }
 
+    private static void createBaseEntity(Schema schema) {
+        base = schema.addEntity("BaseObject");
+        base.addLongProperty("baseId").primaryKey().markTransient();
+        base.addDateProperty("createdOn");
+        base.addDateProperty("updatedOn");
+    }
+
     private static void addNote(Schema schema) {
         Entity note = schema.addEntity("Note");
-        note.addIdProperty();
+        note.setBaseEntity(base);
+        note.addIdProperty().markTransient();
         note.addStringProperty("text").notNull();
         note.addStringProperty("comment");
-        note.addDateProperty("date");
 
         addNoteType(schema, note);
     }
@@ -68,7 +79,7 @@ public class ExampleDaoGenerator {
 
     private static void addCustomerOrder(Schema schema) {
         Entity customer = schema.addEntity("Customer");
-        customer.addIdProperty();
+        customer.addIdProperty().markTransient();
         customer.addStringProperty("name").notNull();
 
         EntityEnum entityEnum = addOrderType(customer);
@@ -76,9 +87,9 @@ public class ExampleDaoGenerator {
         Entity order = schema.addEntity("Order");
         order.setTableName("ORDERS"); // "ORDER" is a reserved keyword
         order.addEnumProperty(entityEnum, "type");
-        order.addIdProperty();
+        order.addIdProperty().markTransient();
         Property orderDate = order.addDateProperty("date").getProperty();
-        Property customerId = order.addLongProperty("customerId").notNull().getProperty();
+        Property customerId = order.addLongProperty("customerId").notNull().markTransient().getProperty();
         order.addToOne(customer, customerId);
 
         ToMany customerToOrders = customer.addToMany(order, customerId);
