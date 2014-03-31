@@ -9,13 +9,14 @@ import de.greenrobot.dao.AbstractDaoSession;
 import de.greenrobot.dao.identityscope.IdentityScopeType;
 import de.greenrobot.dao.internal.DaoConfig;
 
-import de.greenrobot.daoexample.database.BaseObject;
+import de.greenrobot.daoexample.database.SyncBase;
+import de.greenrobot.daoexample.database.BaseState;
 import de.greenrobot.daoexample.database.Note;
 import de.greenrobot.daoexample.database.NoteType;
 import de.greenrobot.daoexample.database.Customer;
 import de.greenrobot.daoexample.database.Order;
 
-import de.greenrobot.daoexample.database.BaseObjectDao;
+import de.greenrobot.daoexample.database.SyncBaseDao;
 import de.greenrobot.daoexample.database.NoteDao;
 import de.greenrobot.daoexample.database.CustomerDao;
 import de.greenrobot.daoexample.database.OrderDao;
@@ -29,12 +30,12 @@ import de.greenrobot.daoexample.database.OrderDao;
  */
 public class DaoSession extends AbstractDaoSession {
 
-    private final DaoConfig baseObjectDaoConfig;
+    private final DaoConfig syncBaseDaoConfig;
     private final DaoConfig noteDaoConfig;
     private final DaoConfig customerDaoConfig;
     private final DaoConfig orderDaoConfig;
 
-    private final BaseObjectDao baseObjectDao;
+    private final SyncBaseDao syncBaseDao;
     private final NoteDao noteDao;
     private final CustomerDao customerDao;
     private final OrderDao orderDao;
@@ -43,8 +44,8 @@ public class DaoSession extends AbstractDaoSession {
             daoConfigMap) {
         super(db);
 
-        baseObjectDaoConfig = daoConfigMap.get(BaseObjectDao.class).clone();
-        baseObjectDaoConfig.initIdentityScope(type);
+        syncBaseDaoConfig = daoConfigMap.get(SyncBaseDao.class).clone();
+        syncBaseDaoConfig.initIdentityScope(type);
 
         noteDaoConfig = daoConfigMap.get(NoteDao.class).clone();
         noteDaoConfig.initIdentityScope(type);
@@ -55,26 +56,26 @@ public class DaoSession extends AbstractDaoSession {
         orderDaoConfig = daoConfigMap.get(OrderDao.class).clone();
         orderDaoConfig.initIdentityScope(type);
 
-        baseObjectDao = new BaseObjectDao(baseObjectDaoConfig, this);
+        syncBaseDao = new SyncBaseDao(syncBaseDaoConfig, this);
         noteDao = new NoteDao(noteDaoConfig, this);
         customerDao = new CustomerDao(customerDaoConfig, this);
         orderDao = new OrderDao(orderDaoConfig, this);
 
-        registerDao(BaseObject.class, baseObjectDao);
+        registerDao(SyncBase.class, syncBaseDao);
         registerDao(Note.class, noteDao);
         registerDao(Customer.class, customerDao);
         registerDao(Order.class, orderDao);
     }
     
     public void clear() {
-        baseObjectDaoConfig.getIdentityScope().clear();
+        syncBaseDaoConfig.getIdentityScope().clear();
         noteDaoConfig.getIdentityScope().clear();
         customerDaoConfig.getIdentityScope().clear();
         orderDaoConfig.getIdentityScope().clear();
     }
 
-    public BaseObjectDao getBaseObjectDao() {
-        return baseObjectDao;
+    public SyncBaseDao getSyncBaseDao() {
+        return syncBaseDao;
     }
 
     public NoteDao getNoteDao() {

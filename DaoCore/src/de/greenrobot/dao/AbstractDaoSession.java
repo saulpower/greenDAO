@@ -15,14 +15,14 @@
  */
 package de.greenrobot.dao;
 
+import android.database.sqlite.SQLiteDatabase;
+import de.greenrobot.dao.async.AsyncSession;
+import de.greenrobot.dao.query.QueryBuilder;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-
-import android.database.sqlite.SQLiteDatabase;
-import de.greenrobot.dao.async.AsyncSession;
-import de.greenrobot.dao.query.QueryBuilder;
 
 /**
  * DaoSession gives you access to your DAOs, offers convenient persistence methods, and also serves as a session cache.<br/>
@@ -54,6 +54,10 @@ public class AbstractDaoSession {
 
     protected <T> void registerDao(Class<T> entityClass, AbstractDao<T, ?> dao) {
         entityToDao.put(entityClass, dao);
+    }
+
+    public Map<Class<?>, AbstractDao<?, ?>> getDaos() {
+        return entityToDao;
     }
 
     /** Convenient call for {@link AbstractDao#insert(Object)}. */

@@ -22,13 +22,17 @@ along with greenDAO Generator.  If not, see <http://www.gnu.org/licenses/>.
 <#assign complexTypes = ["String", "ByteArray", "Date"]/>
 package ${entity.javaPackage};
 
-<#if entity.toManyRelations?has_content>
+<#if entity.toManyRelations?has_content || (schema.greenSyncEnabled && !entity.aBaseEntity)>
 import java.util.List;
+</#if>
+<#if schema.greenSyncEnabled && !entity.aBaseEntity>
+import de.greenrobot.dao.sync.GreenSync;
+import com.google.gson.reflect.TypeToken;
 </#if>
 <#if entity.enums?has_content>
 import de.greenrobot.dao.DaoEnum;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
 
 </#if>
 <#list entity.properties as property>
@@ -36,8 +40,10 @@ import java.util.Map;
 import ${entity.javaPackage}.${property.entityEnum.entity.className}<#if !property.entityEnum.entity.anEnum>.${property.entityEnum.enumName}</#if>;
     </#if>
 </#list>
+<#if entity.aBaseEntity>
+import de.greenrobot.dao.sync.GreenSyncBase;
+</#if>
 <#if entity.active>
-import ${schema.defaultJavaPackageDao}.DaoSession;
 import de.greenrobot.dao.DaoException;
 
 </#if>
@@ -76,7 +82,6 @@ as ifc>${ifc}<#if ifc_has_next>, </#if></#list></#if> {
 
     /** Used for active entity operations. */
     private transient ${entity.classNameDao} myDao;
-
 <#list entity.toOneRelations as toOne>
     private ${toOne.targetEntity.className} ${toOne.name};
 <#if toOne.useFkProperty>
@@ -84,7 +89,6 @@ as ifc>${ifc}<#if ifc_has_next>, </#if></#list></#if> {
 <#else>
     private boolean ${toOne.name}__refreshed;
 </#if>
-
 </#list>
 <#list entity.toManyRelations as toMany>
     private List<${toMany.targetEntity.className}> ${toMany.name};
@@ -99,41 +103,42 @@ ${keepFields!}    // KEEP FIELDS END
 <#if entity.constructors>
     public ${entity.className}() {
     }
-<#if entity.propertiesPk?has_content && entity.propertiesPk?size != entity.properties?size>
 
+<#if entity.propertiesPk?has_content && entity.propertiesPk?size != entity.properties?size>
     public ${entity.className}(<#list entity.propertiesPk as
-property><#if property_index != 0>, </#if>${property.javaType} ${property.propertyName}</#list>) {
+property><#if property_index != 0 && property.reference>, </#if>${property.javaType} ${property.propertyName}</#list>) {
 <#list entity.propertiesPk as property>
         this.${property.propertyName} = ${property.propertyName};
 </#list>
     <#if entity.baseEntity??>
-        setDerivedEntityType(getClass().getSimpleName());
+        setDerivedEntityType(getClass().getCanonicalName());
     </#if>
     }
+
 </#if>
 <#if entity.hasReferenceProperty>
-
     ${entity.className}(<#list entity.properties as
 property>${property.javaType} ${property.propertyName}<#if property_has_next>, </#if></#list>) {
 <#list entity.properties as property>
         this.${property.propertyName} = ${property.propertyName};
 </#list>
     }
-</#if>
 
+</#if>
+    <#assign x = 0>
     public ${entity.className}(<#list entity.properties as
-        property><#if !property.reference><#if property_index != 0>, </#if>${property.javaType} ${property.propertyName}</#if></#list>) {
+        property><#if !property.reference><#if x != 0>, </#if>${property.javaType} ${property.propertyName}<#assign x = x + 1></#if></#list>) {
     <#list entity.properties as property>
         <#if !property.reference>
         this.${property.propertyName} = ${property.propertyName};
         </#if>
     </#list>
     <#if entity.baseEntity??>
-        setDerivedEntityType(getClass().getSimpleName());
+        setDerivedEntityType(getClass().getCanonicalName());
     </#if>
     }
-</#if>
 
+</#if>
 <#if entity.active>
     /** called by internal mechanisms, do not call yourself. */
 <#if entity.baseEntity??>
@@ -160,30 +165,34 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
 
     void insertBase(${entity.classNameDao} dao) {
         myDao = dao;
+        setState(BaseState.CREATE);
         dao.insert(this);
     }
 
-    void updateBase() {
+    void updateBase(SyncBaseDao dao) {
+        myDao = dao;
+        setState(BaseState.UPDATE);
         myDao.update(this);
     }
 
-    void deleteBase() {
+    void deleteBase(SyncBaseDao dao) {
+        myDao = dao;
+        setState(BaseState.DELETE);
         myDao.delete(this);
     }
 </#if>
 <#list entity.properties as property>
-
 <#if property.notNull && complexTypes?seq_contains(property.propertyType)>
     /** Not-null value. */
 </#if>
-    <#if !property.reference>public </#if>${property.javaType} get${property.propertyName?cap_first}() {
+    public ${property.javaType} get${property.propertyName?cap_first}() {
         return ${property.propertyName};
     }
+
 <#if property.notNull && complexTypes?seq_contains(property.propertyType)>
     /** Not-null value; ensure this value is available before it is saved to the database. */
 </#if>
-
-    <#if !property.reference>public </#if>void set${property.propertyName?cap_first}(${property.javaType} ${property.propertyName}) {
+    public void set${property.propertyName?cap_first}(${property.javaType} ${property.propertyName}) {
         this.${property.propertyName} = ${property.propertyName};
     }
 
@@ -345,6 +354,13 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
 <#if entity.hasKeepSections>
     // KEEP METHODS - put your custom methods here
 ${keepMethods!}    // KEEP METHODS END
+
+</#if>
+<#if schema.greenSyncEnabled && !entity.aBaseEntity>
+    static {
+        GreenSync.registerListTypeToken("${entity.className}", new TypeToken<List<${entity.className}>>(){}.getType());
+        GreenSync.registerTypeToken("${entity.className}", ${entity.className}.class);
+    }
 
 </#if>
 }

@@ -1,1 +1,2 @@
+include 'DaoCore'
 rootProject.name = 'greendao-example'

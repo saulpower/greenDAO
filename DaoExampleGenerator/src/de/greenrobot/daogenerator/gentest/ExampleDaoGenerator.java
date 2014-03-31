@@ -28,29 +28,18 @@ import java.util.ArrayList;
  */
 public class ExampleDaoGenerator {
 
-    private static Entity base;
-
     public static void main(String[] args) throws Exception {
         Schema schema = new Schema(3, "de.greenrobot.daoexample.database");
-
-        createBaseEntity(schema);
+        schema.enableGreenSync();
 
         addNote(schema);
         addCustomerOrder(schema);
 
-        new DaoGenerator().generateAll(schema, "/Users/saulhoward/Developer/greenDAO/DaoExample/src-gen");
-    }
-
-    private static void createBaseEntity(Schema schema) {
-        base = schema.addEntity("BaseObject");
-        base.addLongProperty("baseId").primaryKey().markTransient();
-        base.addDateProperty("createdOn");
-        base.addDateProperty("updatedOn");
+        new DaoGenerator().generateAll(schema, "/Users/saulhoward/Developer/greenDAO/DaoExample/src");
     }
 
     private static void addNote(Schema schema) {
         Entity note = schema.addEntity("Note");
-        note.setBaseEntity(base);
         note.addIdProperty().markTransient();
         note.addStringProperty("text").notNull();
         note.addStringProperty("comment");

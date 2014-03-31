@@ -29,10 +29,11 @@ public class OrderDao extends AbstractDao<Order, Long> {
      * Can be used for QueryBuilder and for referencing column names.
     */
     public static class Properties {
-        public final static Property Date = new Property(0, java.util.Date.class, "date", false, "DATE");
-        public final static Property Id = new Property(1, Long.class, "id", true, "_id");
-        public final static Property Type = new Property(2, OrderType.class, "type", false, "TYPE");
-        public final static Property CustomerId = new Property(3, long.class, "customerId", false, "CUSTOMER_ID");
+        public final static Property SyncBaseId = new Property(0, Long.class, "syncBaseId", false, "SYNC_BASE_ID");
+        public final static Property Date = new Property(1, java.util.Date.class, "date", false, "DATE");
+        public final static Property Id = new Property(2, Long.class, "id", true, "_id");
+        public final static Property Type = new Property(3, OrderType.class, "type", false, "TYPE");
+        public final static Property CustomerId = new Property(4, long.class, "customerId", false, "CUSTOMER_ID");
     };
 
     private DaoSession daoSession;
@@ -52,10 +53,11 @@ public class OrderDao extends AbstractDao<Order, Long> {
     public static void createTable(SQLiteDatabase db, boolean ifNotExists) {
         String constraint = ifNotExists? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "'ORDERS' (" + //
-                "'DATE' INTEGER," + // 0: date
-                "'_id' INTEGER PRIMARY KEY ," + // 1: id
-                "'TYPE' INTEGER," + // 2: type
-                "'CUSTOMER_ID' INTEGER NOT NULL );"); // 3: customerId
+                "'SYNC_BASE_ID' INTEGER REFERENCES 'SYNC_BASE'('SYNC_BASE_ID') ," + // 0: syncBaseId
+                "'DATE' INTEGER," + // 1: date
+                "'_id' INTEGER PRIMARY KEY ," + // 2: id
+                "'TYPE' INTEGER," + // 3: type
+                "'CUSTOMER_ID' INTEGER NOT NULL );"); // 4: customerId
     }
 
     /** Drops the underlying database table. */
@@ -69,21 +71,26 @@ public class OrderDao extends AbstractDao<Order, Long> {
     protected void bindValues(SQLiteStatement stmt, Order entity) {
         stmt.clearBindings();
  
+        Long syncBaseId = entity.getSyncBaseId();
+        if (syncBaseId != null) {
+            stmt.bindLong(1, syncBaseId);
+        }
+ 
         java.util.Date date = entity.getDate();
         if (date != null) {
-            stmt.bindLong(1, date.getTime());
+            stmt.bindLong(2, date.getTime());
         }
  
         Long id = entity.getId();
         if (id != null) {
-            stmt.bindLong(2, id);
+            stmt.bindLong(3, id);
         }
  
         OrderType type = entity.getType();
         if (type != null) {
-            stmt.bindLong(3, type.getValue());
+            stmt.bindLong(4, type.getValue());
         }
-        stmt.bindLong(4, entity.getCustomerId());
+        stmt.bindLong(5, entity.getCustomerId());
     }
 
     @Override
@@ -95,17 +102,18 @@ public class OrderDao extends AbstractDao<Order, Long> {
     /** @inheritdoc */
     @Override
     public Long readKey(Cursor cursor, int offset) {
-        return cursor.isNull(offset + 1) ? null : cursor.getLong(offset + 1);
+        return cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2);
     }    
 
     /** @inheritdoc */
     @Override
     public Order readEntity(Cursor cursor, int offset) {
         Order entity = new Order( //
-            cursor.isNull(offset + 0) ? null : new java.util.Date(cursor.getLong(offset + 0)), // date
-            cursor.isNull(offset + 1) ? null : cursor.getLong(offset + 1), // id
-            cursor.isNull(offset + 2) ? null : OrderType.fromInt(cursor.getLong(offset + 2)), // type
-            cursor.getLong(offset + 3) // customerId
+            cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0), // syncBaseId
+            cursor.isNull(offset + 1) ? null : new java.util.Date(cursor.getLong(offset + 1)), // date
+            cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2), // id
+            cursor.isNull(offset + 3) ? null : OrderType.fromInt(cursor.getLong(offset + 3)), // type
+            cursor.getLong(offset + 4) // customerId
         );
         return entity;
     }
@@ -113,10 +121,11 @@ public class OrderDao extends AbstractDao<Order, Long> {
     /** @inheritdoc */
     @Override
     public void readEntity(Cursor cursor, Order entity, int offset) {
-        entity.setDate(cursor.isNull(offset + 0) ? null : new java.util.Date(cursor.getLong(offset + 0)));
-        entity.setId(cursor.isNull(offset + 1) ? null : cursor.getLong(offset + 1));
-        entity.setType(cursor.isNull(offset + 2) ? null : OrderType.fromInt(cursor.getLong(offset + 2)));
-        entity.setCustomerId(cursor.getLong(offset + 3));
+        entity.setSyncBaseId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
+        entity.setDate(cursor.isNull(offset + 1) ? null : new java.util.Date(cursor.getLong(offset + 1)));
+        entity.setId(cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2));
+        entity.setType(cursor.isNull(offset + 3) ? null : OrderType.fromInt(cursor.getLong(offset + 3)));
+        entity.setCustomerId(cursor.getLong(offset + 4));
      }
     
     /** @inheritdoc */
@@ -250,5 +259,30 @@ public class OrderDao extends AbstractDao<Order, Long> {
         return loadDeepAllAndCloseCursor(cursor);
     }
  
+    @Override
+    protected void onPreInsertEntity(Order entity) {
+        entity.insertBase(daoSession.getSyncBaseDao());
+        entity.setSyncBaseId(entity.getSyncBaseId());
+    }
+
+    @Override
+    protected void onPreLoadEntity(Order entity) {
+        entity.loadBase(daoSession.getSyncBaseDao(), entity.getSyncBaseId());
+    }
+
+    @Override
+    protected void onPreRefreshEntity(Order entity) {
+        entity.loadBase(daoSession.getSyncBaseDao(), entity.getSyncBaseId());
+    }
+
+    @Override
+    protected void onPreUpdateEntity(Order entity) {
+        entity.updateBase(daoSession.getSyncBaseDao());
+    }
+
+    @Override
+    protected void onPreDeleteEntity(Order entity) {
+        entity.deleteBase(daoSession.getSyncBaseDao());
+    }
 
 }

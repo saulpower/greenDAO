@@ -470,6 +470,9 @@ public class Entity {
     }
 
     public void setSuperclass(String classToExtend) {
+        if (superclass != null) {
+            throw new IllegalArgumentException("Superclass already set, you are trying to extend two different classes!");
+        }
         this.superclass = classToExtend;
     }
 
@@ -478,6 +481,9 @@ public class Entity {
     }
 
     public void setBaseEntity(Entity baseEntity) {
+        if (this.baseEntity != null) {
+            throw new IllegalArgumentException("Base entity already set, you cannot set two base entities!");
+        }
         if (!baseEntity.isaBaseEntity()) {
             baseEntity.setaBaseEntity();
         }
@@ -494,7 +500,7 @@ public class Entity {
         // initialize derived type property
         if (!aBaseEntity) {
             aBaseEntity = true;
-            addStringProperty("derivedEntityType").notNull().markTransient();
+            addStringProperty("derivedEntityType").markTransient();
         }
     }
 

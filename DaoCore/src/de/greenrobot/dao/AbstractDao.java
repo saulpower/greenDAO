@@ -130,7 +130,7 @@ public abstract class AbstractDao<T, K> {
         if (identityScope != null) {
             T entity = identityScope.get(key);
             if (entity != null) {
-                onLoadEntity(entity);
+                onPreLoadEntity(entity);
                 return entity;
             }
         }
@@ -265,7 +265,7 @@ public abstract class AbstractDao<T, K> {
                 }
                 try {
                     for (T entity : entities) {
-                        onInsertEntity(entity);
+                        onPreInsertEntity(entity);
                         bindValues(stmt, entity);
                         if (setPrimaryKey) {
                             long rowId = stmt.executeInsert();
@@ -306,7 +306,7 @@ public abstract class AbstractDao<T, K> {
         long rowId;
         if (db.isDbLockedByCurrentThread()) {
             synchronized (stmt) {
-                onInsertEntity(entity);
+                onPreInsertEntity(entity);
                 bindValues(stmt, entity);
                 rowId = stmt.executeInsert();
             }
@@ -315,7 +315,7 @@ public abstract class AbstractDao<T, K> {
             db.beginTransaction();
             try {
                 synchronized (stmt) {
-                    onInsertEntity(entity);
+                    onPreInsertEntity(entity);
                     bindValues(stmt, entity);
                     rowId = stmt.executeInsert();
                 }
@@ -340,7 +340,7 @@ public abstract class AbstractDao<T, K> {
         long rowId;
         if (db.isDbLockedByCurrentThread()) {
             synchronized (stmt) {
-                onInsertEntity(entity);
+                onPreInsertEntity(entity);
                 bindValues(stmt, entity);
                 rowId = stmt.executeInsert();
             }
@@ -349,7 +349,7 @@ public abstract class AbstractDao<T, K> {
             db.beginTransaction();
             try {
                 synchronized (stmt) {
-                    onInsertEntity(entity);
+                    onPreInsertEntity(entity);
                     bindValues(stmt, entity);
                     rowId = stmt.executeInsert();
                 }
@@ -418,11 +418,11 @@ public abstract class AbstractDao<T, K> {
             long key = cursor.getLong(pkOrdinal + offset);
             T entity = lock ? identityScopeLong.get2(key) : identityScopeLong.get2NoLock(key);
             if (entity != null) {
-                onLoadEntity(entity);
+                onPreLoadEntity(entity);
                 return entity;
             } else {
                 entity = readEntity(cursor, offset);
-                onLoadEntity(entity);
+                onPreLoadEntity(entity);
                 attachEntity(entity);
                 if (lock) {
                     identityScopeLong.put2(key, entity);
@@ -442,7 +442,7 @@ public abstract class AbstractDao<T, K> {
                 return entity;
             } else {
                 entity = readEntity(cursor, offset);
-                onLoadEntity(entity);
+                onPreLoadEntity(entity);
                 attachEntity(key, entity, lock);
                 return entity;
             }
@@ -456,7 +456,7 @@ public abstract class AbstractDao<T, K> {
                 }
             }
             T entity = readEntity(cursor, offset);
-            onLoadEntity(entity);
+            onPreLoadEntity(entity);
             attachEntity(entity);
             return entity;
         }
@@ -503,7 +503,7 @@ public abstract class AbstractDao<T, K> {
     /** Deletes the given entity from the database. Currently, only single value PK entities are supported. */
     public void delete(T entity) {
         assertSinglePk();
-        onDeleteEntity(entity);
+        onPreDeleteEntity(entity);
         K key = getKeyVerified(entity);
         deleteByKey(key);
     }
@@ -558,7 +558,7 @@ public abstract class AbstractDao<T, K> {
                 try {
                     if (entities != null) {
                         for (T entity : entities) {
-                            onDeleteEntity(entity);
+                            onPreDeleteEntity(entity);
                             K key = getKeyVerified(entity);
                             deleteByKeyInsideSynchronized(key, stmt);
                             if (keysToRemoveFromIdentityScope != null) {
@@ -632,7 +632,7 @@ public abstract class AbstractDao<T, K> {
     /** Resets all locally changed properties of the entity by reloading the values from the database. */
     public void refresh(T entity) {
 
-        onRefreshEntity(entity);
+        onPreRefreshEntity(entity);
 
         assertSinglePk();
         K key = getKeyVerified(entity);
@@ -681,7 +681,7 @@ public abstract class AbstractDao<T, K> {
 
     protected void updateInsideSynchronized(T entity, SQLiteStatement stmt, boolean lock) {
 
-        onUpdateEntity(entity);
+        onPreUpdateEntity(entity);
 
         // To do? Check if it's worth not to bind PKs here (performance).
         bindValues(stmt, entity);
@@ -823,18 +823,18 @@ public abstract class AbstractDao<T, K> {
     /** Returns true if the Entity class can be updated, e.g. for setting the PK after insert. */
     abstract protected boolean isEntityUpdateable();
 
-    protected void onInsertEntity(T entity) {
+    protected void onPreInsertEntity(T entity) {
     }
 
-    protected void onLoadEntity(T entity) {
+    protected void onPreLoadEntity(T entity) {
     }
 
-    protected void onRefreshEntity(T entity) {
+    protected void onPreRefreshEntity(T entity) {
     }
 
-    protected void onUpdateEntity(T entity) {
+    protected void onPreUpdateEntity(T entity) {
     }
 
-    protected void onDeleteEntity(T entity) {
+    protected void onPreDeleteEntity(T entity) {
     }
 }

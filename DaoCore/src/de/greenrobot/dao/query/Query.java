@@ -15,12 +15,11 @@
  */
 package de.greenrobot.dao.query;
 
-import java.util.List;
-
 import android.database.Cursor;
-import android.os.Process;
 import de.greenrobot.dao.AbstractDao;
 import de.greenrobot.dao.DaoException;
+
+import java.util.List;
 
 /**
  * A repeatable query returning entities.
@@ -119,6 +118,15 @@ public class Query<T> extends AbstractQuery<T> {
         checkThread();
         Cursor cursor = dao.getDatabase().rawQuery(sql, parameters);
         return daoAccess.loadAllAndCloseCursor(cursor);
+    }
+
+    /**
+     * Executes the query and returns the cursor
+     * @return the cursor
+     */
+    public Cursor getCursor() {
+        checkThread();
+        return dao.getDatabase().rawQuery(sql, parameters);
     }
 
     /**

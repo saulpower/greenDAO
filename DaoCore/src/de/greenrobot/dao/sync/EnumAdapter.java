@@ -1,4 +1,4 @@
-package de.greenrobot.sync;
+package de.greenrobot.dao.sync;
 
 import de.greenrobot.dao.DaoEnum;
 

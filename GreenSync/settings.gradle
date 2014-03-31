@@ -1,2 +1,0 @@
-include 'DaoCore'
-rootProject.name = 'greensync'

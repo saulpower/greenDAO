@@ -23,12 +23,12 @@ public class CustomerDao extends AbstractDao<Customer, Long> {
      * Can be used for QueryBuilder and for referencing column names.
     */
     public static class Properties {
-        public final static Property Name = new Property(0, String.class, "name", false, "NAME");
-        public final static Property Id = new Property(1, Long.class, "id", true, "_id");
+        public final static Property SyncBaseId = new Property(0, Long.class, "syncBaseId", false, "SYNC_BASE_ID");
+        public final static Property Name = new Property(1, String.class, "name", false, "NAME");
+        public final static Property Id = new Property(2, Long.class, "id", true, "_id");
     };
 
     private DaoSession daoSession;
-
 
     public CustomerDao(DaoConfig config) {
         super(config);
@@ -43,8 +43,9 @@ public class CustomerDao extends AbstractDao<Customer, Long> {
     public static void createTable(SQLiteDatabase db, boolean ifNotExists) {
         String constraint = ifNotExists? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "'CUSTOMER' (" + //
-                "'NAME' TEXT NOT NULL ," + // 0: name
-                "'_id' INTEGER PRIMARY KEY );"); // 1: id
+                "'SYNC_BASE_ID' INTEGER REFERENCES 'SYNC_BASE'('SYNC_BASE_ID') ," + // 0: syncBaseId
+                "'NAME' TEXT NOT NULL ," + // 1: name
+                "'_id' INTEGER PRIMARY KEY );"); // 2: id
     }
 
     /** Drops the underlying database table. */
@@ -57,11 +58,16 @@ public class CustomerDao extends AbstractDao<Customer, Long> {
     @Override
     protected void bindValues(SQLiteStatement stmt, Customer entity) {
         stmt.clearBindings();
-        stmt.bindString(1, entity.getName());
+ 
+        Long syncBaseId = entity.getSyncBaseId();
+        if (syncBaseId != null) {
+            stmt.bindLong(1, syncBaseId);
+        }
+        stmt.bindString(2, entity.getName());
  
         Long id = entity.getId();
         if (id != null) {
-            stmt.bindLong(2, id);
+            stmt.bindLong(3, id);
         }
     }
 
@@ -74,15 +80,16 @@ public class CustomerDao extends AbstractDao<Customer, Long> {
     /** @inheritdoc */
     @Override
     public Long readKey(Cursor cursor, int offset) {
-        return cursor.isNull(offset + 1) ? null : cursor.getLong(offset + 1);
+        return cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2);
     }    
 
     /** @inheritdoc */
     @Override
     public Customer readEntity(Cursor cursor, int offset) {
         Customer entity = new Customer( //
-            cursor.getString(offset + 0), // name
-            cursor.isNull(offset + 1) ? null : cursor.getLong(offset + 1) // id
+            cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0), // syncBaseId
+            cursor.getString(offset + 1), // name
+            cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2) // id
         );
         return entity;
     }
@@ -90,8 +97,9 @@ public class CustomerDao extends AbstractDao<Customer, Long> {
     /** @inheritdoc */
     @Override
     public void readEntity(Cursor cursor, Customer entity, int offset) {
-        entity.setName(cursor.getString(offset + 0));
-        entity.setId(cursor.isNull(offset + 1) ? null : cursor.getLong(offset + 1));
+        entity.setSyncBaseId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
+        entity.setName(cursor.getString(offset + 1));
+        entity.setId(cursor.isNull(offset + 2) ? null : cursor.getLong(offset + 2));
      }
     
     /** @inheritdoc */
@@ -117,5 +125,30 @@ public class CustomerDao extends AbstractDao<Customer, Long> {
         return true;
     }
     
+    @Override
+    protected void onPreInsertEntity(Customer entity) {
+        entity.insertBase(daoSession.getSyncBaseDao());
+        entity.setSyncBaseId(entity.getSyncBaseId());
+    }
+
+    @Override
+    protected void onPreLoadEntity(Customer entity) {
+        entity.loadBase(daoSession.getSyncBaseDao(), entity.getSyncBaseId());
+    }
+
+    @Override
+    protected void onPreRefreshEntity(Customer entity) {
+        entity.loadBase(daoSession.getSyncBaseDao(), entity.getSyncBaseId());
+    }
+
+    @Override
+    protected void onPreUpdateEntity(Customer entity) {
+        entity.updateBase(daoSession.getSyncBaseDao());
+    }
+
+    @Override
+    protected void onPreDeleteEntity(Customer entity) {
+        entity.deleteBase(daoSession.getSyncBaseDao());
+    }
 
 }

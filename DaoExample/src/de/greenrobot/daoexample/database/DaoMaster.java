@@ -8,7 +8,7 @@ import android.util.Log;
 import de.greenrobot.dao.AbstractDaoMaster;
 import de.greenrobot.dao.identityscope.IdentityScopeType;
 
-import de.greenrobot.daoexample.database.BaseObjectDao;
+import de.greenrobot.daoexample.database.SyncBaseDao;
 import de.greenrobot.daoexample.database.NoteDao;
 import de.greenrobot.daoexample.database.CustomerDao;
 import de.greenrobot.daoexample.database.OrderDao;
@@ -22,7 +22,7 @@ public class DaoMaster extends AbstractDaoMaster {
 
     /** Creates underlying database table using DAOs. */
     public static void createAllTables(SQLiteDatabase db, boolean ifNotExists) {
-        BaseObjectDao.createTable(db, ifNotExists);
+        SyncBaseDao.createTable(db, ifNotExists);
         NoteDao.createTable(db, ifNotExists);
         CustomerDao.createTable(db, ifNotExists);
         OrderDao.createTable(db, ifNotExists);
@@ -30,7 +30,7 @@ public class DaoMaster extends AbstractDaoMaster {
     
     /** Drops underlying database table using DAOs. */
     public static void dropAllTables(SQLiteDatabase db, boolean ifExists) {
-        BaseObjectDao.dropTable(db, ifExists);
+        SyncBaseDao.dropTable(db, ifExists);
         NoteDao.dropTable(db, ifExists);
         CustomerDao.dropTable(db, ifExists);
         OrderDao.dropTable(db, ifExists);
@@ -65,7 +65,7 @@ public class DaoMaster extends AbstractDaoMaster {
 
     public DaoMaster(SQLiteDatabase db) {
         super(db, SCHEMA_VERSION);
-        registerDaoClass(BaseObjectDao.class);
+        registerDaoClass(SyncBaseDao.class);
         registerDaoClass(NoteDao.class);
         registerDaoClass(CustomerDao.class);
         registerDaoClass(OrderDao.class);

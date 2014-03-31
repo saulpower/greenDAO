@@ -38,6 +38,7 @@ public class Schema {
     private Map<PropertyType, String> propertyToJavaTypeNullable;
     private boolean hasKeepSectionsByDefault;
     private boolean useActiveEntitiesByDefault;
+    private Entity syncBaseEntity;
 
     public Schema(int version, String defaultJavaPackage) {
         this.version = version;
@@ -52,6 +53,28 @@ public class Schema {
 
     public void enableActiveEntitiesByDefault() {
         useActiveEntitiesByDefault = true;
+    }
+
+    public void enableGreenSync() {
+        syncBaseEntity = addEntity("SyncBase");
+        syncBaseEntity.addLongProperty("syncBaseId").primaryKey().markTransient();
+        syncBaseEntity.addDateProperty("createdOn");
+        syncBaseEntity.addDateProperty("updatedOn");
+        syncBaseEntity.addStringProperty("externalId");
+        syncBaseEntity.implementsInterface("GreenSyncBase");
+
+        ArrayList<EntityEnum.Value> values = new ArrayList<EntityEnum.Value>();
+        values.add(new EntityEnum.Value("create", 1));
+        values.add(new EntityEnum.Value("update", 2));
+        values.add(new EntityEnum.Value("delete", 3));
+        values.add(new EntityEnum.Value("clean", 3));
+        EnumEntity enumEntity = addEnumEntity("BaseState", values);
+
+        syncBaseEntity.addEnumProperty(enumEntity.getEntityEnum(), "state").markTransient();
+    }
+
+    public boolean isGreenSyncEnabled() {
+        return syncBaseEntity != null;
     }
 
     private void initTypeMappings() {
@@ -100,7 +123,22 @@ public class Schema {
      * per table to create table scripts, etc.
      */
     public Entity addEntity(String className) {
+        return addEntity(className, true);
+    }
+
+    /**
+     * Adds a new entity to the schema. There can be multiple entities per table, but only one may be the primary entity
+     * per table to create table scripts, etc.
+     *
+     * If GreenSync is enabled the entity can be added to the syncing process
+     */
+    public Entity addEntity(String className, boolean syncable) {
         Entity entity = new Entity(this, className);
+
+        if (syncBaseEntity != null && syncable) {
+            entity.setBaseEntity(syncBaseEntity);
+        }
+
         entities.add(entity);
         return entity;
     }
