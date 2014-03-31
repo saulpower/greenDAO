@@ -10,7 +10,7 @@ public enum BaseState implements DaoEnum {
     CREATE(1),
     UPDATE(2),
     DELETE(3),
-    CLEAN(3);
+    CLEAN(4);
 
     private static final Map<Long, BaseState> intToTypeMap = new HashMap<Long, BaseState>();
 

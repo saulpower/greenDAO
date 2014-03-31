@@ -65,6 +65,7 @@ import ${entity.javaPackage}.${entity.className}.Builder;
 import android.util.Log;
 import de.greenrobot.dao.DaoException;
 import de.greenrobot.dao.sync.GreenSyncDaoBase;
+import de.greenrobot.dao.sync.GreenSyncBase;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -76,7 +77,7 @@ import java.util.Map;
 /** 
  * DAO for table ${entity.tableName}.
 */
-public class ${entity.classNameDao} extends AbstractDao<${entity.className}, ${entity.pkType}><#if entity.aBaseEntity> implements GreenSyncDaoBase</#if> {
+public class ${entity.classNameDao} extends AbstractDao<${entity.className}, ${entity.pkType}><#if entity.aBaseEntity> implements GreenSyncDaoBase<${entity.className}></#if> {
 
     public static final String TABLENAME = "${entity.tableName}";
 
@@ -353,16 +354,16 @@ as property>${property.columnName}<#if property_has_next>,</#if></#list>);");
     * @param state
     * @return
     */
-    private Map loadState(BaseState state) {
+    private Map<String, List<GreenSyncBase>> loadState(BaseState state) {
 
-        Query query = queryBuilder().where(Properties.State.eq(state.getValue())).orderAsc(Properties.DerivedEntityType).build();
-        Cursor cursor = query.getCursor();
+    Query query = queryBuilder().where(Properties.State.eq(state.getValue())).orderAsc(Properties.DerivedEntityType).build();
+    Cursor cursor = query.getCursor();
 
-        Map<String, List> map = new HashMap<String, List>();
+    Map<String, List<GreenSyncBase>> map = new HashMap<String, List<GreenSyncBase>>();
 
         if (cursor.moveToFirst()) {
 
-            List list = new ArrayList<Object>();
+            List<GreenSyncBase> list = new ArrayList<GreenSyncBase>();
 
             do {
                 Long baseId = cursor.getLong(Properties.SyncBaseId.ordinal);
@@ -370,13 +371,13 @@ as property>${property.columnName}<#if property_has_next>,</#if></#list>);");
                 String[] key = type.split("\\.");
 
                 if (!map.containsKey(key[key.length - 1])) {
-                    list = new ArrayList<Object>();
+                    list = new ArrayList<GreenSyncBase>();
                     map.put(key[key.length - 1], list);
                 }
 
                 try {
                     AbstractDao abstractDao = daoSession.getDao(Class.forName(type));
-                    Object object = abstractDao.queryBuilder().where(Properties.SyncBaseId.eq(baseId)).uniqueOrThrow();
+                    GreenSyncBase object = (GreenSyncBase) abstractDao.queryBuilder().where(Properties.SyncBaseId.eq(baseId)).uniqueOrThrow();
                     list.add(object);
                 } catch (ClassNotFoundException ex) {
                     Log.e("SyncBaseDao", "Could not load dao for class " + type);
@@ -390,17 +391,17 @@ as property>${property.columnName}<#if property_has_next>,</#if></#list>);");
     }
 
     @Override
-    public Map getUpdatedObjects() {
+    public Map<String, List<GreenSyncBase>> getUpdatedObjects() {
         return loadState(BaseState.UPDATE);
     }
 
     @Override
-    public Map getDeletedObjects() {
+    public Map<String, List<GreenSyncBase>> getDeletedObjects() {
         return loadState(BaseState.DELETE);
     }
 
     @Override
-    public Map getCreatedObjects() {
+    public Map<String, List<GreenSyncBase>> getCreatedObjects() {
         return loadState(BaseState.CREATE);
     }
 </#if>

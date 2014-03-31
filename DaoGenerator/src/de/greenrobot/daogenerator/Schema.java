@@ -61,13 +61,13 @@ public class Schema {
         syncBaseEntity.addDateProperty("createdOn");
         syncBaseEntity.addDateProperty("updatedOn");
         syncBaseEntity.addStringProperty("externalId");
-        syncBaseEntity.implementsInterface("GreenSyncBase");
+        syncBaseEntity.setSuperclass("GreenSyncBase");
 
         ArrayList<EntityEnum.Value> values = new ArrayList<EntityEnum.Value>();
         values.add(new EntityEnum.Value("create", 1));
         values.add(new EntityEnum.Value("update", 2));
         values.add(new EntityEnum.Value("delete", 3));
-        values.add(new EntityEnum.Value("clean", 3));
+        values.add(new EntityEnum.Value("clean", 4));
         EnumEntity enumEntity = addEnumEntity("BaseState", values);
 
         syncBaseEntity.addEnumProperty(enumEntity.getEntityEnum(), "state").markTransient();

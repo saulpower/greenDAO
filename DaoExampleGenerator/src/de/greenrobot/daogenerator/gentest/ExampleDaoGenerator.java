@@ -39,9 +39,9 @@ public class ExampleDaoGenerator {
     }
 
     private static void addNote(Schema schema) {
-        Entity note = schema.addEntity("Note");
+        Entity note = schema.addEntity("Notes");
         note.addIdProperty().markTransient();
-        note.addStringProperty("text").notNull();
+        note.addStringProperty("name").notNull();
         note.addStringProperty("comment");
 
         addNoteType(schema, note);
@@ -67,7 +67,7 @@ public class ExampleDaoGenerator {
     }
 
     private static void addCustomerOrder(Schema schema) {
-        Entity customer = schema.addEntity("Customer");
+        Entity customer = schema.addEntity("Customers");
         customer.addIdProperty().markTransient();
         customer.addStringProperty("name").notNull();
 

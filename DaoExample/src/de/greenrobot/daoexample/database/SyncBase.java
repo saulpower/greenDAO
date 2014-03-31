@@ -8,7 +8,7 @@ import de.greenrobot.dao.DaoException;
 /**
  * Entity mapped to table SYNC_BASE.
  */
-public class SyncBase implements GreenSyncBase {
+public class SyncBase extends GreenSyncBase  {
 
     private java.util.Date updatedOn;
     private transient BaseState state;
@@ -58,6 +58,7 @@ public class SyncBase implements GreenSyncBase {
     }
 
     void updateBase(SyncBaseDao dao) {
+        if (state == BaseState.CREATE) return;
         myDao = dao;
         setState(BaseState.UPDATE);
         myDao.update(this);
@@ -67,6 +68,11 @@ public class SyncBase implements GreenSyncBase {
         myDao = dao;
         setState(BaseState.DELETE);
         myDao.delete(this);
+    }
+
+    @Override
+    public void clean() {
+        setState(BaseState.CLEAN);
     }
     public java.util.Date getUpdatedOn() {
         return updatedOn;

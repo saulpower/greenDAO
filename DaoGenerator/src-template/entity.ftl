@@ -170,6 +170,7 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
     }
 
     void updateBase(SyncBaseDao dao) {
+        if (state == BaseState.CREATE) return;
         myDao = dao;
         setState(BaseState.UPDATE);
         myDao.update(this);
@@ -179,6 +180,11 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
         myDao = dao;
         setState(BaseState.DELETE);
         myDao.delete(this);
+    }
+
+    @Override
+    public void clean() {
+        setState(BaseState.CLEAN);
     }
 </#if>
 <#list entity.properties as property>

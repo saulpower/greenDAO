@@ -21,7 +21,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -51,19 +50,20 @@ public class NoteActivity extends ListActivity {
 
     private DaoMaster daoMaster;
     private DaoSession daoSession;
-    private NoteDao noteDao;
-    private CustomerDao customerDao;
-    private List<Note> notes;
-    private List<Customer> customers;
+    private NotesDao noteDao;
+    private CustomersDao customerDao;
+    private List<Notes> notes;
+    private List<Customers> customers;
     private MyAdapter adapter;
     private GreenSync greenSync;
+    private List<Notes> demoNotes;
 
-    public static class MyAdapter extends ArrayAdapter<Note> {
+    public static class MyAdapter extends ArrayAdapter<Notes> {
 
         int mResource;
         LayoutInflater mInflater;
 
-        public MyAdapter(Context context, int resource, List<Note> objects) {
+        public MyAdapter(Context context, int resource, List<Notes> objects) {
             super(context, resource, objects);
 
             mResource = resource;
@@ -86,9 +86,9 @@ public class NoteActivity extends ListActivity {
                 viewHolder = (ViewHolder) view.getTag();
             }
 
-            Note note = getItem(position);
+            Notes note = getItem(position);
 
-            viewHolder.title.setText(note.getText());
+            viewHolder.title.setText(note.getName());
             viewHolder.subTitle.setText(note.getComment());
 
             return view;
@@ -120,10 +120,10 @@ public class NoteActivity extends ListActivity {
 
         daoMaster = new DaoMaster(db);
         daoSession = daoMaster.newSession();
-        noteDao = daoSession.getNoteDao();
-        customerDao = daoSession.getCustomerDao();
+        noteDao = daoSession.getNotesDao();
+        customerDao = daoSession.getCustomersDao();
 
-        greenSync = new GreenSync(daoSession);
+        greenSync = new GreenSync(daoSession, MySyncServce.get(this));
 
         createDemoData();
 
@@ -142,17 +142,17 @@ public class NoteActivity extends ListActivity {
 
         int max = 5;
 
-        List<Note> demoNotes = new ArrayList<Note>();
-        List<Customer> demoCustomers = new ArrayList<Customer>();
+        List<Notes> demoNotes = new ArrayList<Notes>();
+        List<Customers> demoCustomers = new ArrayList<Customers>();
 
         for (int i = 0; i < max; i++) {
 
-            Note note = new Note("comment " + i, "text " + i, null, NoteType.fromInt(i % 3));
+            Notes note = new Notes("My Note " + i, "Comment " + i, null, NoteType.fromInt(i % 3 + 1));
             note.setCreatedOn(new Date());
             note.setUpdatedOn(new Date());
             demoNotes.add(note);
 
-            Customer customer = new Customer("Joe Bob" + i, null);
+            Customers customer = new Customers("Joe Bob" + i, null);
             customer.setCreatedOn(new Date());
             customer.setUpdatedOn(new Date());
             demoCustomers.add(customer);
@@ -207,12 +207,12 @@ public class NoteActivity extends ListActivity {
 
         final DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
         String comment = "Added on " + df.format(new Date());
-        Note note = new Note(comment, noteText, null, NoteType.FRISBEE);
+        Notes note = new Notes(comment, noteText, null, NoteType.FRISBEE);
         note.setCreatedOn(new Date());
         note.setUpdatedOn(new Date());
         noteDao.insert(note);
 
-        Customer customer = new Customer("Joe Bob", null);
+        Customers customer = new Customers("Joe Bob", null);
         customerDao.insert(customer);
 
         notes.add(note);
@@ -232,11 +232,14 @@ public class NoteActivity extends ListActivity {
     }
 
     private void toJson() {
-        Long start = System.currentTimeMillis();
-        String json = greenSync.sync();
-        Log.i(TAG, "Write: " + json);
-        start = System.currentTimeMillis();
-        greenSync.processResponse(json);
-        Log.i(TAG, "Read: " + (System.currentTimeMillis() - start));
+        greenSync.sync();
+//        Long start = System.currentTimeMillis();
+//        String json = greenSync.syncBatch();
+//        Log.i(TAG, "Write: " + json);
+//        start = System.currentTimeMillis();
+//        greenSync.processResponse(json);
+//        Log.i(TAG, "Read: " + (System.currentTimeMillis() - start));
     }
+
+
 }

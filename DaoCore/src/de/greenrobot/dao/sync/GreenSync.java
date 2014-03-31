@@ -1,5 +1,6 @@
 package de.greenrobot.dao.sync;
 
+import android.util.Log;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -30,6 +31,7 @@ public class GreenSync {
     private Gson mGson;
     private GreenSyncDaoBase mGreenSyncDaoBase;
     private AbstractDaoSession mSession;
+    private SyncService mSyncService;
 
     private final Map<Class<? extends DaoEnum>, EnumAdapter<? extends DaoEnum>> enumAdapters =
             new LinkedHashMap<Class<? extends DaoEnum>, EnumAdapter<? extends DaoEnum>>();
@@ -46,13 +48,15 @@ public class GreenSync {
         return sListTypeTokensMap.get(key);
     }
 
-    public GreenSync(AbstractDaoSession session) {
+    public GreenSync(AbstractDaoSession session, SyncService syncService) {
+
         final GsonBuilder builder = new GsonBuilder();
         builder.excludeFieldsWithModifiers(Modifier.TRANSIENT);
         builder.registerTypeAdapterFactory(new EntityTypeAdapterFactory(this));
         builder.setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE);
         mGson = builder.create();
         mSession = session;
+        mSyncService = syncService;
 
         for (AbstractDao dao : mSession.getDaos().values()) {
             if (dao instanceof GreenSyncDaoBase) {
@@ -76,7 +80,48 @@ public class GreenSync {
         return adapter;
     }
 
-    public String sync() {
+    public void sync() {
+        syncAction(mGreenSyncDaoBase.getCreatedObjects(), CREATED);
+        syncAction(mGreenSyncDaoBase.getUpdatedObjects(), UPDATED);
+        syncAction(mGreenSyncDaoBase.getDeletedObjects(), DELETED);
+    }
+
+    private void syncAction(Map<String, List<GreenSyncBase>> objects, String action) {
+
+        for (Map.Entry<String, List<GreenSyncBase>> object : objects.entrySet()) {
+
+            String className = object.getKey();
+            List<GreenSyncBase> items = object.getValue();
+
+            for (final GreenSyncBase item : items) {
+                String json = mGson.toJson(item);
+
+                SyncService.Callback callback = new SyncService.Callback() {
+                    @Override
+                    public void onSuccess(String externalId) {
+                        item.clean();
+                        item.setExternalId(externalId);
+                        mGreenSyncDaoBase.update(item);
+                    }
+
+                    @Override
+                    public void onFail(String errorMessage) {
+                        Log.e("GreenSync", "Failed Sync: " + errorMessage);
+                    }
+                };
+
+                if (action.equals(CREATED)) {
+                    mSyncService.create(className, json, callback);
+                } else if (action.equals(UPDATED)) {
+                    mSyncService.update(className, json, callback);
+                } else if (action.equals(DELETED)) {
+                    mSyncService.delete(className, json, callback);
+                }
+            }
+        }
+    }
+
+    public String syncBatch() {
 
         Map<String, Map> syncObjects = new HashMap<String, Map>();
 
