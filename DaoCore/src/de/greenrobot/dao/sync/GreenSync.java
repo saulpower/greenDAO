@@ -11,10 +11,7 @@ import de.greenrobot.dao.DaoEnum;
 
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by saulhoward on 3/21/14.
@@ -46,6 +43,10 @@ public class GreenSync {
 
     public static Type getTypeToken(String key) {
         return sListTypeTokensMap.get(key);
+    }
+
+    public Gson getGson() {
+        return mGson;
     }
 
     public GreenSync(AbstractDaoSession session, SyncService syncService) {
@@ -98,9 +99,9 @@ public class GreenSync {
 
                 SyncService.Callback callback = new SyncService.Callback() {
                     @Override
-                    public void onSuccess(String externalId) {
+                    public void onSuccess(String response) {
                         item.clean();
-                        item.setExternalId(externalId);
+                        item.setExternalId(response);
                         mGreenSyncDaoBase.update(item);
                     }
 
@@ -119,6 +120,39 @@ public class GreenSync {
                 }
             }
         }
+    }
+
+    public <T> void load(final Class clazz, final String id, final SyncService.ObjectListener<T> listener) {
+        mSyncService.read(clazz.getSimpleName(), id, new SyncService.Callback() {
+            @Override
+            public void onSuccess(String response) {
+                List list;
+
+                Type type = clazz;
+
+                if (id == null) {
+                    type = sListTypeTokensMap.get(clazz.getSimpleName());
+                }
+
+                Object object = mGson.fromJson(response, type);
+                if (!(object instanceof List)) {
+                    list = new ArrayList<T>();
+                    list.add(object);
+                } else {
+                    list = (List) object;
+                }
+                listener.onObjectsLoaded(list);
+            }
+
+            @Override
+            public void onFail(String errorMessage) {
+                listener.onObjectsLoaded(new ArrayList<T>());
+            }
+        });
+    }
+
+    public <T> void loadAll(Class clazz, final SyncService.ObjectListener<T> listener) {
+        load(clazz, null, listener);
     }
 
     public String syncBatch() {

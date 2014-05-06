@@ -19,15 +19,13 @@ along with greenDAO Generator.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <#assign toBindType = {"Boolean":"Long", "Byte":"Long", "Short":"Long", "Int":"Long", "Long":"Long", "Float":"Double", "Double":"Double", "String":"String", "ByteArray":"Blob" }/>
 <#assign toCursorType = {"Boolean":"Short", "Byte":"Short", "Short":"Short", "Int":"Int", "Long":"Long", "Float":"Float", "Double":"Double", "String":"String", "ByteArray":"Blob" }/>
+<#assign toParcelType = {"Boolean":"Value", "boolean":"Byte", "Byte":"Value", "byte":"Byte", "Integer":"Value", "int":"Int", "Long":"Value", "long":"Long", "Float":"Value", "float":"Float", "Double":"Value", "double":"Double", "String":"String", "Byte[]":"ByteArray" }/>
 <#assign complexTypes = ["String", "ByteArray", "Date"]/>
 package ${entity.javaPackage};
 
-<#if entity.toManyRelations?has_content || (schema.greenSyncEnabled && !entity.aBaseEntity)>
+<#if entity.toManyRelations?has_content>
 import java.util.List;
-</#if>
-<#if schema.greenSyncEnabled && !entity.aBaseEntity>
-import de.greenrobot.dao.sync.GreenSync;
-import com.google.gson.reflect.TypeToken;
+import java.util.Collections;
 </#if>
 <#if entity.enums?has_content>
 import de.greenrobot.dao.DaoEnum;
@@ -40,6 +38,10 @@ import java.util.HashMap;
 import ${entity.javaPackage}.${property.entityEnum.entity.className}<#if !property.entityEnum.entity.anEnum>.${property.entityEnum.enumName}</#if>;
     </#if>
 </#list>
+<#if entity.implementParcelable>
+import android.os.Parcel;
+import android.os.Parcelable;
+</#if>
 <#if entity.aBaseEntity>
 import de.greenrobot.dao.sync.GreenSyncBase;
 </#if>
@@ -65,7 +67,7 @@ import ${additionalImport};
  * Entity mapped to table ${entity.tableName}.
  */
 public class ${entity.className}<#if
-entity.superclass?has_content> extends ${entity.superclass} </#if><#if
+entity.superclass?has_content> extends ${entity.superclass}</#if><#if
 entity.interfacesToImplement?has_content> implements <#list entity.interfacesToImplement
 as ifc>${ifc}<#if ifc_has_next>, </#if></#list></#if> {
 
@@ -317,7 +319,34 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
                 }
             }
         }
-        return ${toMany.name};
+        return Collections.unmodifiableList(${toMany.name});
+    }
+
+    public void set${toMany.name?cap_first}(List<${toMany.targetEntity.className}> ${toMany.name}) {
+        if (${toMany.name} == null) return;
+
+        synchronized (this) {
+            for (${toMany.targetEntity.className} item : ${toMany.name}) {
+                <#assign x=toMany.sourceProperties?size - 1>
+                <#list 0..x as i>
+                item.set${toMany.targetProperties[i].propertyName?cap_first}(get${toMany.sourceProperties[i].propertyName?cap_first}());
+                </#list>
+            }
+
+            this.${toMany.name} = ${toMany.name};
+        }
+    }
+
+    public void add${toMany.name?cap_first}(${toMany.targetEntity.className} ${toMany.name}) {
+        if (${toMany.name} == null) return;
+
+        synchronized (this) {
+            <#assign x=toMany.sourceProperties?size - 1>
+            <#list 0..x as i>
+            ${toMany.name}.set${toMany.targetProperties[i].propertyName?cap_first}(get${toMany.sourceProperties[i].propertyName?cap_first}());
+            </#list>
+            this.${toMany.name}.add(${toMany.name});
+        }
     }
 
     /** Resets a to-many relationship, making the next get call to query for a fresh result. */
@@ -357,16 +386,69 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
     }
 
 </#if>
+<#if entity.implementParcelable>
+    public ${entity.className}(Parcel in ) {
+        readFromParcel(in);
+    }
+
+    public static final Parcelable.Creator CREATOR = new Parcelable.Creator() {
+        public ${entity.className} createFromParcel(Parcel in) {
+            return new ${entity.className}(in);
+        }
+
+        public ${entity.className}[] newArray(int size) {
+            return new ${entity.className}[size];
+        }
+    };
+
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+    <#list entity.properties as property>
+        <#if property.anEnum>
+        dest.writeLong(${property.propertyName}.getValue());
+        <#elseif property.javaType == "boolean">
+        dest.writeByte((byte) (${property.propertyName} ? 1 : 0));
+        <#else>
+        dest.write${toParcelType[property.javaType]}(${property.propertyName});
+        </#if>
+    </#list>
+    <#list entity.toOneRelations as toOne>
+        dest.writeValue(${toOne.name});
+    </#list>
+    <#list entity.toManyRelations as toMany>
+        dest.writeArray(${toMany.name} != null ? ${toMany.name}.toArray() : null);
+    </#list>
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    private void readFromParcel(Parcel in) {
+    <#list entity.properties as property>
+        <#if property.anEnum>
+        ${property.propertyName} = ${property.javaType}.fromInt(in.readLong());
+        <#elseif property.javaType == "boolean">
+        ${property.propertyName} = in.readByte() != 0;
+        <#elseif toParcelType[property.javaType] == "Value">
+        ${property.propertyName} = (${property.javaType}) in.read${toParcelType[property.javaType]}(ClassLoader.getSystemClassLoader());
+        <#else>
+        ${property.propertyName} = in.read${toParcelType[property.javaType]}();
+        </#if>
+    </#list>
+    <#list entity.toOneRelations as toOne>
+        ${toOne.name} = (${toOne.targetEntity.className}) in.readValue(${toOne.targetEntity.className}.class.getClassLoader());
+    </#list>
+    <#list entity.toManyRelations as toMany>
+        ${toMany.name} = in.readArrayList(${toMany.targetEntity.className}.class.getClassLoader());
+    </#list>
+    }
+</#if>
 <#if entity.hasKeepSections>
     // KEEP METHODS - put your custom methods here
 ${keepMethods!}    // KEEP METHODS END
-
-</#if>
-<#if schema.greenSyncEnabled && !entity.aBaseEntity>
-    static {
-        GreenSync.registerListTypeToken("${entity.className}", new TypeToken<List<${entity.className}>>(){}.getType());
-        GreenSync.registerTypeToken("${entity.className}", ${entity.className}.class);
-    }
 
 </#if>
 }

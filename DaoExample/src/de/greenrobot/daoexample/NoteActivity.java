@@ -21,6 +21,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,6 +33,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import de.greenrobot.dao.sync.GreenSync;
+import de.greenrobot.dao.sync.SyncService;
 import de.greenrobot.daoexample.database.*;
 import de.greenrobot.daoexample.database.DaoMaster.DevOpenHelper;
 
@@ -232,7 +234,19 @@ public class NoteActivity extends ListActivity {
     }
 
     private void toJson() {
-        greenSync.sync();
+        greenSync.loadAll(Notes.class, new SyncService.ObjectListener<Notes>() {
+            @Override
+            public void onObjectsLoaded(List<Notes> objects) {
+                Log.i(TAG, "Notes" + objects.size());
+            }
+        });
+        greenSync.load(Notes.class, "b4e814b0-9d4a-47d6-b373-1e88621dc529", new SyncService.ObjectListener<Notes>() {
+            @Override
+            public void onObjectsLoaded(List<Notes> objects) {
+                Log.i(TAG, "Notes: " + objects.size());
+            }
+        });
+//        greenSync.sync();
 //        Long start = System.currentTimeMillis();
 //        String json = greenSync.syncBatch();
 //        Log.i(TAG, "Write: " + json);

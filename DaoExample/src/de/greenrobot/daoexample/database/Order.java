@@ -1,8 +1,5 @@
 package de.greenrobot.daoexample.database;
 
-import java.util.List;
-import de.greenrobot.dao.sync.GreenSync;
-import com.google.gson.reflect.TypeToken;
 import de.greenrobot.daoexample.database.Customers.OrderType;
 import de.greenrobot.dao.DaoException;
 
@@ -148,11 +145,6 @@ public class Order extends SyncBase  {
             throw new DaoException("Entity is detached from DAO context");
         }    
         myDao.refresh(this);
-    }
-
-    static {
-        GreenSync.registerListTypeToken("Order", new TypeToken<List<Order>>(){}.getType());
-        GreenSync.registerTypeToken("Order", Order.class);
     }
 
 }

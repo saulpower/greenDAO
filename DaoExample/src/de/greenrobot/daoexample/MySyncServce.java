@@ -1,15 +1,12 @@
 package de.greenrobot.daoexample;
 
 import android.content.Context;
-import android.util.Log;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
 import de.greenrobot.dao.sync.SyncService;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * Created by saulhoward on 3/31/14.
@@ -43,7 +40,7 @@ public class MySyncServce implements SyncService {
 
     @Override
     public void read(String className, String id, final Callback callback) {
-        sendRequest(Request.Method.GET, className, null, null, callback);
+        sendRequest(Request.Method.GET, className, null, id, callback);
     }
 
     @Override
@@ -69,14 +66,7 @@ public class MySyncServce implements SyncService {
         StringRequest request = new StringRequest(method, urlBuilder.toString(), payload, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                Log.i("MySyncService", "Response: " + response);
-                JSONObject json = null;
-                try {
-                    json = new JSONObject(response);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                callback.onSuccess(json.optString("Guid"));
+                callback.onSuccess(response);
             }
         }, new Response.ErrorListener() {
             @Override

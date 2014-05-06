@@ -67,6 +67,8 @@ public class Entity {
     private boolean skipGeneration;
     private boolean skipGenerationTest;
     private boolean skipTableCreation;
+
+    private boolean implementParcelable = false;
     private Boolean active;
     private Boolean hasKeepSections;
 
@@ -374,6 +376,15 @@ public class Entity {
 
     public boolean isSkipGeneration() {
         return skipGeneration;
+    }
+
+    public boolean isImplementParcelable() {
+        return implementParcelable;
+    }
+
+    public void setImplementParcelable(boolean implementParcelable) {
+        this.implementParcelable = implementParcelable;
+        implementsInterface("Parcelable");
     }
 
     /**

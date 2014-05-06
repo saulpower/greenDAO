@@ -21,8 +21,12 @@ along with greenDAO Generator.  If not, see <http://www.gnu.org/licenses/>.
 <#assign toCursorType = {"Boolean":"Short", "Byte":"Short", "Short":"Short", "Int":"Int", "Long":"Long", "Float":"Float", "Double":"Double", "String":"String", "ByteArray":"Blob", "Date": "Long", "Enum": "Long"  } />
 package ${entity.javaPackageDao};
 
-<#if entity.toOneRelations?has_content || entity.incomingToManyRelations?has_content>
+<#if entity.toOneRelations?has_content || entity.incomingToManyRelations?has_content || (schema.greenSyncEnabled && !entity.aBaseEntity)>
 import java.util.List;
+</#if>
+<#if schema.greenSyncEnabled && !entity.aBaseEntity>
+import de.greenrobot.dao.sync.GreenSync;
+import com.google.gson.reflect.TypeToken;
 </#if>
 <#if entity.toOneRelations?has_content>
 import java.util.ArrayList;
@@ -404,5 +408,12 @@ as property>${property.columnName}<#if property_has_next>,</#if></#list>);");
     public Map<String, List<GreenSyncBase>> getCreatedObjects() {
         return loadState(BaseState.CREATE);
     }
+</#if>
+<#if schema.greenSyncEnabled && !entity.aBaseEntity>
+    static {
+        GreenSync.registerListTypeToken("${entity.className}", new TypeToken<List<${entity.className}>>(){}.getType());
+        GreenSync.registerTypeToken("${entity.className}", ${entity.className}.class);
+    }
+
 </#if>
 }

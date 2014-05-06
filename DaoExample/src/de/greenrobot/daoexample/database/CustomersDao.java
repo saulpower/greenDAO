@@ -1,5 +1,8 @@
 package de.greenrobot.daoexample.database;
 
+import java.util.List;
+import de.greenrobot.dao.sync.GreenSync;
+import com.google.gson.reflect.TypeToken;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
@@ -149,6 +152,11 @@ public class CustomersDao extends AbstractDao<Customers, Long> {
     @Override
     protected void onPreDeleteEntity(Customers entity) {
         entity.deleteBase(daoSession.getSyncBaseDao());
+    }
+
+    static {
+        GreenSync.registerListTypeToken("Customers", new TypeToken<List<Customers>>(){}.getType());
+        GreenSync.registerTypeToken("Customers", Customers.class);
     }
 
 }

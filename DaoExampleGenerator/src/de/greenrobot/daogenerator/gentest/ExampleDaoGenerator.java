@@ -43,6 +43,7 @@ public class ExampleDaoGenerator {
         note.addIdProperty().markTransient();
         note.addStringProperty("name").notNull();
         note.addStringProperty("comment");
+        note.setImplementParcelable(true);
 
         addNoteType(schema, note);
     }

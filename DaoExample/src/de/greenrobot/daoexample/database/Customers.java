@@ -1,8 +1,7 @@
 package de.greenrobot.daoexample.database;
 
 import java.util.List;
-import de.greenrobot.dao.sync.GreenSync;
-import com.google.gson.reflect.TypeToken;
+import java.util.Collections;
 import de.greenrobot.dao.DaoEnum;
 import java.util.Map;
 import java.util.HashMap;
@@ -125,7 +124,28 @@ public class Customers extends SyncBase  {
                 }
             }
         }
-        return orders;
+        return Collections.unmodifiableList(orders);
+    }
+
+    public void setOrders(List<Order> orders) {
+        if (orders == null) return;
+
+        synchronized (this) {
+            for (Order item : orders) {
+                item.setCustomerId(getId());
+            }
+
+            this.orders = orders;
+        }
+    }
+
+    public void addOrders(Order orders) {
+        if (orders == null) return;
+
+        synchronized (this) {
+            orders.setCustomerId(getId());
+            this.orders.add(orders);
+        }
     }
 
     /** Resets a to-many relationship, making the next get call to query for a fresh result. */
@@ -155,11 +175,6 @@ public class Customers extends SyncBase  {
             throw new DaoException("Entity is detached from DAO context");
         }    
         myDao.refresh(this);
-    }
-
-    static {
-        GreenSync.registerListTypeToken("Customers", new TypeToken<List<Customers>>(){}.getType());
-        GreenSync.registerTypeToken("Customers", Customers.class);
     }
 
 }
