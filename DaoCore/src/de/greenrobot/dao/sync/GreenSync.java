@@ -1,8 +1,8 @@
 package de.greenrobot.dao.sync;
 
+import android.net.Uri;
 import android.util.Log;
 import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import de.greenrobot.dao.AbstractDao;
@@ -18,6 +18,8 @@ import java.util.*;
  */
 public class GreenSync {
 
+    private static final String TAG = GreenSync.class.getSimpleName();
+
     private static Map<String, Type> sListTypeTokensMap = new HashMap<String, Type>();
     private static Map<String, Class<?>> sClassMap = new HashMap<String, Class<?>>();
 
@@ -25,7 +27,7 @@ public class GreenSync {
     public static final String UPDATED = "Updated";
     public static final String DELETED = "Deleted";
 
-    private Gson mGson;
+    private JsonParser mJsonParser;
     private GreenSyncDaoBase mGreenSyncDaoBase;
     private AbstractDaoSession mSession;
     private SyncService mSyncService;
@@ -45,17 +47,21 @@ public class GreenSync {
         return sListTypeTokensMap.get(key);
     }
 
-    public Gson getGson() {
-        return mGson;
+    public JsonParser getJsonParser() {
+        return mJsonParser;
     }
 
     public GreenSync(AbstractDaoSession session, SyncService syncService) {
+        this(session, syncService, null);
+    }
 
-        final GsonBuilder builder = new GsonBuilder();
-        builder.excludeFieldsWithModifiers(Modifier.TRANSIENT);
-        builder.registerTypeAdapterFactory(new EntityTypeAdapterFactory(this));
-        builder.setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE);
-        mGson = builder.create();
+    public GreenSync(AbstractDaoSession session, SyncService syncService, JsonParser jsonParser) {
+
+        if (jsonParser == null) {
+            jsonParser = new GsonParser(this);
+        }
+
+        mJsonParser = jsonParser;
         mSession = session;
         mSyncService = syncService;
 
@@ -91,50 +97,57 @@ public class GreenSync {
 
         for (Map.Entry<String, List<GreenSyncBase>> object : objects.entrySet()) {
 
-            String className = object.getKey();
-            List<GreenSyncBase> items = object.getValue();
+            try {
+                SyncUri uri = new SyncUri.Builder()
+                        .pluralizePathNames()
+                        .appendClass(Class.forName(object.getKey()))
+                        .build();
+                List<GreenSyncBase> items = object.getValue();
 
-            for (final GreenSyncBase item : items) {
-                String json = mGson.toJson(item);
+                for (final GreenSyncBase item : items) {
+                    String json = mJsonParser.toJson(item);
 
-                SyncService.Callback callback = new SyncService.Callback() {
-                    @Override
-                    public void onSuccess(String response) {
-                        item.clean();
-                        item.setExternalId(response);
-                        mGreenSyncDaoBase.update(item);
+                    SyncService.Callback callback = new SyncService.Callback() {
+                        @Override
+                        public void onSuccess(String response) {
+                            item.clean();
+                            item.setExternalId(response);
+                            mGreenSyncDaoBase.update(item);
+                        }
+
+                        @Override
+                        public void onFail(String errorMessage) {
+                            Log.e("GreenSync", "Failed Sync: " + errorMessage);
+                        }
+                    };
+
+                    if (action.equals(CREATED)) {
+                        mSyncService.create(uri, json, callback);
+                    } else if (action.equals(UPDATED)) {
+                        mSyncService.update(uri, json, callback);
+                    } else if (action.equals(DELETED)) {
+                        mSyncService.delete(uri, callback);
                     }
-
-                    @Override
-                    public void onFail(String errorMessage) {
-                        Log.e("GreenSync", "Failed Sync: " + errorMessage);
-                    }
-                };
-
-                if (action.equals(CREATED)) {
-                    mSyncService.create(className, json, callback);
-                } else if (action.equals(UPDATED)) {
-                    mSyncService.update(className, json, callback);
-                } else if (action.equals(DELETED)) {
-                    mSyncService.delete(className, json, callback);
                 }
+            } catch (ClassNotFoundException ex) {
+                Log.e(TAG, "Could not find class to perform sync", ex);
             }
         }
     }
 
-    public <T> void load(final Class clazz, final String id, final SyncService.ObjectListener<T> listener) {
-        mSyncService.read(clazz.getSimpleName(), id, new SyncService.Callback() {
+    public <T> void load(final SyncUri uri, final SyncService.ObjectListener<T> listener) {
+        mSyncService.read(uri, new SyncService.Callback() {
             @Override
             public void onSuccess(String response) {
                 List list;
 
-                Type type = clazz;
+                Type type = uri.getUriClass();
 
-                if (id == null) {
-                    type = sListTypeTokensMap.get(clazz.getSimpleName());
+                if (uri.isList()) {
+                    type = sListTypeTokensMap.get(uri.getUriClass().getSimpleName());
                 }
 
-                Object object = mGson.fromJson(response, type);
+                Object object = mJsonParser.fromJson(response, type);
                 if (!(object instanceof List)) {
                     list = new ArrayList<T>();
                     list.add(object);
@@ -151,6 +164,14 @@ public class GreenSync {
         });
     }
 
+    public <T> void load(Class clazz, String id, SyncService.ObjectListener<T> listener) {
+        final SyncUri uri = new SyncUri.Builder()
+                .pluralizePathNames()
+                .appendObject(clazz, id)
+                .build();
+        load(uri, listener);
+    }
+
     public <T> void loadAll(Class clazz, final SyncService.ObjectListener<T> listener) {
         load(clazz, null, listener);
     }
@@ -163,13 +184,13 @@ public class GreenSync {
         syncObjects.put(UPDATED, mGreenSyncDaoBase.getUpdatedObjects());
         syncObjects.put(DELETED, mGreenSyncDaoBase.getDeletedObjects());
 
-        return mGson.toJson(syncObjects);
+        return mJsonParser.toJson(syncObjects);
     }
 
     public void processResponse(String json) {
 
         Type listType = new TypeToken<Map<String, List>>() {}.getType();
-        Map<String, Map> map =  mGson.fromJson(json, listType);
+        Map<String, Map> map =  mJsonParser.fromJson(json, listType);
 
         for (Map.Entry<String, Map> action : map.entrySet()) {
             if (action.getKey().equals(CREATED)) {
