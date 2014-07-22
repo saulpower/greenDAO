@@ -14,7 +14,7 @@ public class SyncUri {
     private volatile String uriString;
     private Class clazz;
 
-    public SyncUri(LinkedList<PathPart> path, Part pagination, LinkedList<Part> include) {
+    private SyncUri(LinkedList<PathPart> path, Part pagination, LinkedList<Part> include) {
         this.path = path;
         this.pagination = pagination;
         this.include = include;
@@ -93,7 +93,11 @@ public class SyncUri {
         }
 
         public Builder appendClass(Class clazz) {
-            return part(path, PathPart.fromClass(clazz));
+            return part(path, PathPart.fromClass(clazz, pluralize));
+        }
+
+        public Builder appendClass(Class clazz, String endpointName) {
+            return part(path, PathPart.fromClass(clazz, endpointName));
         }
 
         public Builder appendId(String id) {
@@ -101,7 +105,11 @@ public class SyncUri {
         }
 
         public Builder appendObject(Class clazz, String id) {
-            return part(path, PathPart.fromClass(clazz)).part(path, PathPart.fromId(id));
+            return part(path, PathPart.fromClass(clazz, pluralize)).part(path, PathPart.fromId(id));
+        }
+
+        public Builder appendObject(Class clazz, String endpointName, String id) {
+            return part(path, PathPart.fromClass(clazz, endpointName)).part(path, PathPart.fromId(id));
         }
 
         public Builder appendInclude(String include) {
@@ -149,8 +157,12 @@ public class SyncUri {
             return clazz != null;
         }
 
-        static PathPart fromClass(Class clazz) {
-            return from(pluralize(clazz.getSimpleName()), clazz);
+        static PathPart fromClass(Class clazz, boolean pluralize) {
+            return from(pluralize(clazz.getSimpleName(), pluralize), clazz);
+        }
+
+        static PathPart fromClass(Class clazz, String value) {
+            return from(value, clazz);
         }
 
         static PathPart fromId(String id) {
@@ -166,7 +178,12 @@ public class SyncUri {
             return new PathPart(value, clazz);
         }
 
-        static String pluralize(String name) {
+        static String pluralize(String name, boolean pluralize) {
+
+            if (!pluralize) {
+                return name;
+            }
+
             char last = name.charAt(name.length() - 1);
 
             if (last == 'y') {
