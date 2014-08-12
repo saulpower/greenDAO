@@ -146,14 +146,15 @@ as property>${property.columnName}<#if property_has_next>,</#if></#list>);");
 <#list entity.properties as property>
 <#if property.notNull || entity.protobuf>
 <#if entity.protobuf>
-        if(entity.has${property.propertyName?cap_first}()) {
+        if (entity.has${property.propertyName?cap_first}()) {
     </#if>        stmt.bind${toBindType[property.propertyType]}(${property_index + 1}, entity.get${property.propertyName?cap_first}()<#if
      property.propertyType == "Boolean"> ? 1l: 0l</#if><#if property.propertyType == "Date">.getTime()</#if><#if property.propertyType == "Enum">.getValue()</#if>);
 <#if entity.protobuf>
         }
 </#if>
 <#else> <#-- nullable, non-protobuff -->
-        ${property.javaType} ${property.propertyName} = entity.get${property.propertyName?cap_first}();
+        ${property.javaType} ${property.propertyName} = <#if property
+        .listProperty>arrayToString(</#if>entity.get${property.propertyName?cap_first}()<#if property.listProperty>)</#if>;
         if (${property.propertyName} != null) {
             stmt.bind${toBindType[property.propertyType]}(${property_index + 1}, ${property.propertyName}<#if
  property.propertyType == "Boolean"> ? 1l: 0l</#if><#if property.propertyType == "Date">.getTime()</#if><#if property.propertyType == "Enum">.getValue()</#if>);
@@ -223,7 +224,7 @@ as property>${property.columnName}<#if property_has_next>,</#if></#list>);");
             <#if !property.notNull>cursor.isNull(offset + ${property_index}) ? null : </#if><#if
             property.propertyType == "Byte">(byte) </#if><#if
             property.propertyType == "Enum">${property.javaType}.fromInt(</#if><#if
-            property.propertyType == "Date">new java.util.Date(</#if>cursor.get${toCursorType[property.propertyType]}(offset + ${property_index})<#if
+            property.propertyType == "Date">new java.util.Date(</#if><#if property.listProperty>stringToArray(</#if>cursor.get${toCursorType[property.propertyType]}(offset + ${property_index})<#if property.listProperty>)</#if><#if
             property.propertyType == "Boolean"> != 0</#if><#if
             property.propertyType == "Enum">)</#if><#if
             property.propertyType == "Date">)</#if><#if property_has_next>,</#if> // ${property.propertyName}
@@ -250,7 +251,7 @@ as property>${property.columnName}<#if property_has_next>,</#if></#list>);");
         entity.set${property.propertyName?cap_first}(<#if !property.notNull>cursor.isNull(offset + ${property_index}) ? null : </#if><#if
             property.propertyType == "Byte">(byte) </#if><#if
             property.propertyType == "Enum">${property.javaType}.fromInt(</#if><#if
-            property.propertyType == "Date">new java.util.Date(</#if>cursor.get${toCursorType[property.propertyType]}(offset + ${property_index})<#if
+            property.propertyType == "Date">new java.util.Date(</#if><#if property.listProperty>stringToArray(</#if>cursor.get${toCursorType[property.propertyType]}(offset + ${property_index})<#if property.listProperty>)</#if><#if
             property.propertyType == "Boolean"> != 0</#if><#if
             property.propertyType == "Enum">)</#if><#if
             property.propertyType == "Date">)</#if>);

@@ -101,6 +101,11 @@ public class Property {
             return this;
         }
 
+        public PropertyBuilder asList() {
+            property.listProperty = true;
+            return this;
+        }
+
         public PropertyBuilder index() {
             Index index = new Index();
             index.addProperty(property);
@@ -156,6 +161,7 @@ public class Property {
     private boolean notNull;
 
     private boolean transientProperty = false;
+    private boolean listProperty = false;
 
     /** Initialized in 2nd pass */
     private String constraints;
@@ -220,6 +226,8 @@ public class Property {
     public boolean isReference() { return referenceTable != null && referenceColumn != null; }
 
     public boolean isTransientProperty() { return transientProperty; }
+
+    public boolean isListProperty() { return listProperty; }
 
     public String getJavaType() {
         return javaType;

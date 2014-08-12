@@ -75,7 +75,8 @@ as ifc>${ifc}<#if ifc_has_next>, </#if></#list></#if> {
 <#if property.notNull && complexTypes?seq_contains(property.propertyType)>
     /** Not-null value. */
 </#if>
-    private <#if property.transientProperty>transient </#if>${property.javaType} ${property.propertyName};
+    private <#if property.transientProperty>transient </#if>${property.javaType}<#if property.listProperty>[]</#if> ${property
+    .propertyName};
 </#list>
 
 <#if entity.active>
@@ -108,7 +109,8 @@ ${keepFields!}    // KEEP FIELDS END
 
 <#if entity.propertiesPk?has_content && entity.propertiesPk?size != entity.properties?size>
     public ${entity.className}(<#list entity.propertiesPk as
-property><#if property_index != 0 && property.reference>, </#if>${property.javaType} ${property.propertyName}</#list>) {
+property><#if property_index != 0 && property.reference>, </#if>${property.javaType}<#if property
+.listProperty>[]</#if> ${property.propertyName}</#list>) {
 <#list entity.propertiesPk as property>
         this.${property.propertyName} = ${property.propertyName};
 </#list>
@@ -120,7 +122,8 @@ property><#if property_index != 0 && property.reference>, </#if>${property.javaT
 </#if>
 <#if entity.hasReferenceProperty>
     ${entity.className}(<#list entity.properties as
-property>${property.javaType} ${property.propertyName}<#if property_has_next>, </#if></#list>) {
+property>${property.javaType}<#if property.listProperty>[]</#if> ${property.propertyName}<#if
+property_has_next>, </#if></#list>) {
 <#list entity.properties as property>
         this.${property.propertyName} = ${property.propertyName};
 </#list>
@@ -129,7 +132,8 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
 </#if>
     <#assign x = 0>
     public ${entity.className}(<#list entity.properties as
-        property><#if !property.reference><#if x != 0>, </#if>${property.javaType} ${property.propertyName}<#assign x = x + 1></#if></#list>) {
+        property><#if !property.reference><#if x != 0>, </#if>${property.javaType}<#if property
+        .listProperty>[]</#if> ${property.propertyName}<#assign x = x + 1></#if></#list>) {
     <#list entity.properties as property>
         <#if !property.reference>
         this.${property.propertyName} = ${property.propertyName};
@@ -157,7 +161,8 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
 </#if>
 <#if entity.aBaseEntity>
     void loadBase(${entity.classNameDao} dao, <#list entity.propertiesPk as
-        property><#if property_index != 0>, </#if>${property.javaType} ${property.propertyName}</#list>) {
+        property><#if property_index != 0>, </#if>${property.javaType}<#if property
+        .listProperty>[]</#if> ${property.propertyName}</#list>) {
         myDao = dao;
     <#list entity.propertiesPk as property>
         this.${property.propertyName} = ${property.propertyName};
@@ -193,14 +198,16 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
 <#if property.notNull && complexTypes?seq_contains(property.propertyType)>
     /** Not-null value. */
 </#if>
-    public ${property.javaType} get${property.propertyName?cap_first}() {
+    public ${property.javaType}<#if property.listProperty>[]</#if> get${property
+    .propertyName?cap_first}() {
         return ${property.propertyName};
     }
 
 <#if property.notNull && complexTypes?seq_contains(property.propertyType)>
     /** Not-null value; ensure this value is available before it is saved to the database. */
 </#if>
-    public void set${property.propertyName?cap_first}(${property.javaType} ${property.propertyName}) {
+    public void set${property.propertyName?cap_first}(${property.javaType}<#if property
+    .listProperty>[]</#if> ${property.propertyName}) {
         this.${property.propertyName} = ${property.propertyName};
     }
 
@@ -405,12 +412,16 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
     @Override
     public void writeToParcel(Parcel dest, int flags) {
     <#list entity.properties as property>
+        <#if property.listProperty>
+        dest.write${toParcelType[property.javaType]}Array(${property.propertyName});
+        <#else>
         <#if property.anEnum>
         dest.writeLong(${property.propertyName}.getValue());
         <#elseif property.javaType == "boolean">
         dest.writeByte((byte) (${property.propertyName} ? 1 : 0));
         <#else>
         dest.write${toParcelType[property.javaType]}(${property.propertyName});
+        </#if>
         </#if>
     </#list>
     <#list entity.toOneRelations as toOne>
@@ -428,6 +439,9 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
 
     private void readFromParcel(Parcel in) {
     <#list entity.properties as property>
+        <#if property.listProperty>
+        in.read${toParcelType[property.javaType]}Array(${property.propertyName});
+        <#else>
         <#if property.anEnum>
         ${property.propertyName} = ${property.javaType}.fromInt(in.readLong());
         <#elseif property.javaType == "boolean">
@@ -436,6 +450,7 @@ property>${property.javaType} ${property.propertyName}<#if property_has_next>, <
         ${property.propertyName} = (${property.javaType}) in.read${toParcelType[property.javaType]}(ClassLoader.getSystemClassLoader());
         <#else>
         ${property.propertyName} = in.read${toParcelType[property.javaType]}();
+        </#if>
         </#if>
     </#list>
     <#list entity.toOneRelations as toOne>

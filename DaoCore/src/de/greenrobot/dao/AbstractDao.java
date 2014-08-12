@@ -22,6 +22,7 @@ import android.database.CursorWindow;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
+import com.google.gson.Gson;
 import de.greenrobot.dao.identityscope.IdentityScope;
 import de.greenrobot.dao.identityscope.IdentityScopeLong;
 import de.greenrobot.dao.internal.DaoConfig;
@@ -65,6 +66,8 @@ public abstract class AbstractDao<T, K> {
 
     protected final AbstractDaoSession session;
     protected final int pkOrdinal;
+
+    private Gson gson = new Gson();
 
     public AbstractDao(DaoConfig config) {
         this(config, null);
@@ -113,6 +116,20 @@ public abstract class AbstractDao<T, K> {
 
     public String[] getNonPkColumns() {
         return config.nonPkColumns;
+    }
+
+    protected String arrayToString(String[] array) {
+        if (gson == null) {
+            gson = new Gson();
+        }
+        return gson.toJson(array);
+    }
+
+    protected String[] stringToArray(String string) {
+        if (gson == null) {
+            gson = new Gson();
+        }
+        return gson.fromJson(string, String[].class);
     }
 
     /**
